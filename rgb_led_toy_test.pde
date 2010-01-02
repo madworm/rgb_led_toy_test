@@ -88,31 +88,14 @@ loop (void)
  * You need to determine them yourself. The easiest way is to make a LED blink for a well defined time and use an oscilloscope
  * to measure it. Adjust 'OSCCAL' to make the time right. There is some code on my blog to show how it may work for you.
  */
+#define __sync_delay 75    // this really needs to be fixed by a much better oscillator calibration --> new digital scope !
 #ifdef MASTER
-  OSCCAL = 122;			// MASTER board
+  //OSCCAL = 122;            // MASTER board
 #else
-  OSCCAL = 104;			// SLAVE board
+  //OSCCAL = 104;            // SLAVE board
 #endif
 
-
-#ifdef MASTER
-  __delay_ms (500);
-  DDRC |= ((1 << PC4));		// PC4 is an output
-  PORTC &= ~((1 << PC4));	// set PC4 low
-  __delay_ms (1);
-  PORTC |= ((1 << PC4));	// set PC4 high
-  DDRC &= ~((1 << PC4));	// PC4 is an input
-  PORTC |= ((1 << PC4));	// internal pull-up on
-#endif
-
-#ifdef SLAVE
-  while ((PINC & (1 << PC4)))
-    {
-    };				// wait for sync pulse (low) from master
-  __delay_ms (1);
-#endif
-
-  enable_timer1_ovf ();
+enable_timer1_ovf ();
   int ctr;
   for (ctr = 0; ctr <= 5; ctr++)
     {
@@ -126,35 +109,76 @@ loop (void)
     {
       color_wave (30);
     }
-  disable_timer1_ovf ();
+disable_timer1_ovf ();
 
+  sync(4*__sync_delay); 
   blink_all_red_times (10, 20);
+  sync(__sync_delay);  
   blink_all_green_times (10, 20);
+  sync(__sync_delay);
   blink_all_blue_times (10, 20);
+  sync(__sync_delay);  
   blink_all_white_times (10, 15);
 
 #ifdef MASTER
+  sync(__sync_delay);
   white_clockwise (10, 20);
+  sync(__sync_delay);
   white_counterclockwise (10, 20);
+  sync(__sync_delay);
   rotating_bar (BLUE, CCW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (GREEN, CW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (RED, CCW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (YELLOW, CW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (TURQUOISE, CCW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (PURPLE, CW, 15, 75);
+  sync(__sync_delay);  
   rotating_bar (WHITE, CCW, 15, 75);
 #endif
 
 #ifdef SLAVE
+  sync(__sync_delay);
   white_counterclockwise (10, 20);
+  sync(__sync_delay);
   white_clockwise (10, 20);
+  sync(__sync_delay);
   rotating_bar (BLUE, CW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (GREEN, CCW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (RED, CW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (YELLOW, CCW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (TURQUOISE, CW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (PURPLE, CCW, 15, 75);
+  sync(__sync_delay);
   rotating_bar (WHITE, CW, 15, 75);
+#endif
+}
+
+void sync(int sync_delay) {
+#ifdef MASTER
+__delay_ms (sync_delay);
+DDRC |= ((1 << PC4));    // PC4 is an output
+PORTC &= ~((1 << PC4));  // set PC4 low
+__delay_ms (1);
+PORTC |= ((1 << PC4));  // set PC4 high
+DDRC &= ~((1 << PC4));  // PC4 is an input
+PORTC |= ((1 << PC4));  // internal pull-up on
+#endif
+
+#ifdef SLAVE
+  while ((PINC & (1 << PC4)))
+    {
+    };				// wait for sync pulse (low) from master
+  __delay_ms (1);
 #endif
 }
 
