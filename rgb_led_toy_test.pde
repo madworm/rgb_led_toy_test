@@ -179,7 +179,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
 	      PORTB &=
 		~((1 << fix_led_numbering[ctr1]) |
 		  (1 <<
-		   fix_led_numbering[((ctr1 + 4) > 7) ? 0 : (ctr1 + 4)]));
+		   fix_led_numbering[(ctr1 + 4)]));
 	      __delay_ms (delay_time);
 	    }
 	}
@@ -187,13 +187,13 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
     case CCW:
       for (ctr2 = 0; ctr2 < times; ctr2++)
 	{
-	  for (ctr1 = __max_led - 4; (ctr1 >= 0 && ctr1 != 255); ctr1--)
+	  for (ctr1 = __max_led - 4 + 1; ctr1 >= 1; ctr1--)
 	    {
 	      PORTB = 0xFF;
 	      PORTB &=
 		~((1 << fix_led_numbering[ctr1]) |
 		  (1 <<
-		   fix_led_numbering[((ctr1 + 4) > 7) ? 0 : (ctr1 + 4)]));
+		   fix_led_numbering[(ctr1 + 4)%8]));
 	      __delay_ms (delay_time);
 	    }
 	}
