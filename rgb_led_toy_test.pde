@@ -37,7 +37,7 @@ Select if the board is a MASTER (sends sync pulse), or a slave (waits for sync p
 #include <avr/interrupt.h>
 #include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
-uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 5, 4, 6, 7 };	// the PCBs I got still have an error, as the updated design wasn't taken into account by the fab house it seems
+uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// the PCBs I got still have an error, as the updated design wasn't taken into account by the fab house it seems
 
 /*
 void setup(void);
@@ -256,10 +256,10 @@ white_counterclockwise (uint8_t times, int delay_time)
   uint8_t ctr2;
   for (ctr2 = 0; ctr2 < times; ctr2++)
     {
-      for (ctr1 = __max_led; (ctr1 >= 0 && ctr1 != 255); ctr1--)
+      for (ctr1 = __max_led+1; ctr1 >= 1; ctr1--)
 	{
 	  PORTB = 0xFF;
-	  PORTB &= ~(1 << fix_led_numbering[ctr1]);
+	  PORTB &= ~(1 << fix_led_numbering[ctr1%8]);
 	  __delay_ms (delay_time);
 	}
     }
