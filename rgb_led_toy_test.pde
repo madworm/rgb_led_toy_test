@@ -1,5 +1,5 @@
 /*
- * 2009 - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST -- branch: with_pwm
+ * 2009 - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
 
 /*
@@ -97,15 +97,15 @@ loop (void)
 
 enable_timer1_ovf ();
   int ctr;
-  for (ctr = 0; ctr <= 5; ctr++)
+  for (ctr = 0; ctr < 2; ctr++)
     {
       fader ();
     }
-  for (ctr = 0; ctr <= 5; ctr++)
+  for (ctr = 0; ctr < 2; ctr++)
     {
       fader_hue ();
     }
-  for (ctr = 0; ctr < 3000; ctr++)
+  for (ctr = 0; ctr < 1000; ctr++)
     {
       color_wave (30);
     }
@@ -118,9 +118,11 @@ disable_timer1_ovf ();
   sync(__sync_delay);
   blink_all_blue_times (10, 20);
   sync(__sync_delay);  
-  blink_all_white_times (10, 15);
+  blink_all_white_times (10, 20);
 
 #ifdef MASTER
+  sync(__sync_delay);
+  wobble(RED,CW,10,80);
   sync(__sync_delay);
   white_clockwise (10, 20);
   sync(__sync_delay);
@@ -142,6 +144,8 @@ disable_timer1_ovf ();
 #endif
 
 #ifdef SLAVE
+  sync(__sync_delay);
+  wobble(RED,CCW,10,80);
   sync(__sync_delay);
   white_counterclockwise (10, 20);
   sync(__sync_delay);
@@ -188,33 +192,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
 {
   uint8_t ctr1;
   uint8_t ctr2;
-
-  switch (led_color)
-    {				// turn ON the necessary anodes
-    case RED:
-      PORTD |= ((1 << RED_A));
-      break;
-    case GREEN:
-      PORTD |= ((1 << GREEN_A));
-      break;
-    case BLUE:
-      PORTD |= ((1 << BLUE_A));
-      break;
-    case YELLOW:
-      PORTD |= ((1 << RED_A) | (1 << GREEN_A));
-      break;
-    case TURQUOISE:
-      PORTD |= ((1 << GREEN_A) | (1 << BLUE_A));
-      break;
-    case PURPLE:
-      PORTD |= ((1 << RED_A) | (1 << BLUE_A));
-      break;
-    case WHITE:
-      PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-      break;
-    default:
-      break;
-    }
+  color_on(led_color);
   switch (direction)
     {
     case CW:
@@ -246,7 +224,226 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
     default:
       break;
     }
-  switch (led_color)
+  color_off(led_color);
+}
+
+void
+white_clockwise (uint8_t times, int delay_time)
+{
+  color_on(WHITE);
+  uint8_t ctr1;
+  uint8_t ctr2;
+  for (ctr2 = 0; ctr2 < times; ctr2++)
+    {
+      for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
+	{
+	  PORTB = 0xFF;
+	  PORTB &= ~(1 << fix_led_numbering[ctr1]);
+	  __delay_ms (delay_time);
+	}
+    }
+  color_off(WHITE);
+}
+
+void
+white_counterclockwise (uint8_t times, int delay_time)
+{
+  color_on(WHITE);
+  uint8_t ctr1;
+  uint8_t ctr2;
+  for (ctr2 = 0; ctr2 < times; ctr2++)
+    {
+      for (ctr1 = __max_led + 1; ctr1 >= 1; ctr1--)
+	{
+	  PORTB = 0xFF;
+	  PORTB &= ~(1 << fix_led_numbering[ctr1 % 8]);
+	  __delay_ms (delay_time);
+	}
+    }
+  color_off(WHITE);
+}
+
+void
+blink_all_red_times (uint8_t times, int delay_time)
+{
+  uint8_t ctr;
+  color_on(RED);
+  for (ctr = 0; ctr < times; ctr++)
+    {
+      PORTB = 0x00;
+      __delay_ms (delay_time);
+      PORTB = 0xFF;		// off
+      __delay_ms (delay_time);
+    }
+  color_off(RED);
+}
+
+void
+blink_all_green_times (uint8_t times, int delay_time)
+{
+  uint8_t ctr;
+  color_on(GREEN);
+  for (ctr = 0; ctr < times; ctr++)
+    {
+      PORTB = 0x00;
+      __delay_ms (delay_time);
+      PORTB = 0xFF;		// off
+      __delay_ms (delay_time);
+    }
+  color_off(GREEN);
+}
+
+void
+blink_all_blue_times (uint8_t times, int delay_time)
+{
+  uint8_t ctr;
+  color_on(BLUE);
+  for (ctr = 0; ctr < times; ctr++)
+    {
+      PORTB = 0x00;
+      __delay_ms (delay_time);
+      PORTB = 0xFF;		// off
+      __delay_ms (delay_time);
+    }
+  color_off(BLUE);
+}
+
+void
+blink_all_white_times (uint8_t times, int delay_time)
+{
+  uint8_t ctr;
+  color_on(WHITE);
+  for (ctr = 0; ctr < times; ctr++)
+    {
+      PORTB = 0x00;
+      __delay_ms (delay_time);
+      PORTB = 0xFF;		// off
+      __delay_ms (delay_time);
+    }
+  color_off(WHITE);
+}
+
+void
+__delay_ms (uint16_t delay_time)
+{
+  /*
+   * this construct is needed to avoid a huge increase in codesize
+   * if _delay_ms() is called like: _delay_ms(var)
+   * instead of _delay_ms(const var)
+   */
+  uint16_t counter;
+  for (counter = 0; counter < delay_time; counter++)
+    {
+      _delay_ms (1);
+    }
+}
+
+void
+set_byte(unsigned char data_byte)
+{
+  unsigned char ctr;
+  unsigned char what_bit;
+  for(ctr=0; ctr<=7; ctr++)
+  {
+    what_bit = (1<<ctr);
+    if( data_byte & what_bit) {
+      PORTB &= ~(1<<fix_led_numbering[ctr]); // cathode low, LED on
+    }
+    else {
+      PORTB |= (1<<fix_led_numbering[ctr]);
+    }
+  } 
+}
+
+void
+wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
+	      uint8_t times, int delay_time)
+{
+  uint8_t ctr;
+  color_on(led_color);
+  switch (direction)
+    {
+    case CW:
+      for (ctr = 0; ctr < times; ctr++)
+	{
+          set_byte(B01000000);
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+          set_byte(B00010001);
+	  __delay_ms(delay_time);
+          set_byte(B00001010);
+	  __delay_ms(delay_time);
+          set_byte(B00000100);
+	  __delay_ms(delay_time);
+          set_byte(B00001010); 
+	  __delay_ms(delay_time);
+          set_byte(B00010001); 
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+	}
+      break;
+    case CCW:
+      for (ctr = 0; ctr < times; ctr++)
+	{
+          set_byte(B00000100);
+	  __delay_ms(delay_time);
+          set_byte(B00001010);
+	  __delay_ms(delay_time);
+          set_byte(B00010001);
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+          set_byte(B01000000);
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+          set_byte(B00010001);
+	  __delay_ms(delay_time);
+          set_byte(B00001010);
+	  __delay_ms(delay_time);
+	}
+      break;
+    default:
+      break;
+    }
+  color_off(led_color);
+}
+
+void
+color_on(enum COLOR_t led_color) {
+    switch (led_color)
+    {				// turn ON the necessary anodes
+    case RED:
+      PORTD |= ((1 << RED_A));
+      break;
+    case GREEN:
+      PORTD |= ((1 << GREEN_A));
+      break;
+    case BLUE:
+      PORTD |= ((1 << BLUE_A));
+      break;
+    case YELLOW:
+      PORTD |= ((1 << RED_A) | (1 << GREEN_A));
+      break;
+    case TURQUOISE:
+      PORTD |= ((1 << GREEN_A) | (1 << BLUE_A));
+      break;
+    case PURPLE:
+      PORTD |= ((1 << RED_A) | (1 << BLUE_A));
+      break;
+    case WHITE:
+      PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
+      break;
+    default:
+      break;
+    }
+}
+
+void
+color_off(enum COLOR_t led_color) {
+    switch (led_color)
     {				// turn OFF the anodes again when we're done
     case RED:
       PORTD &= ~((1 << RED_A));
@@ -272,123 +469,10 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
     default:
       break;
     }
-
 }
-
-void
-white_clockwise (uint8_t times, int delay_time)
-{
-  PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-  uint8_t ctr1;
-  uint8_t ctr2;
-  for (ctr2 = 0; ctr2 < times; ctr2++)
-    {
-      for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
-	{
-	  PORTB = 0xFF;
-	  PORTB &= ~(1 << fix_led_numbering[ctr1]);
-	  __delay_ms (delay_time);
-	}
-    }
-  PORTD &= ~((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-}
-
-void
-white_counterclockwise (uint8_t times, int delay_time)
-{
-  PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-  uint8_t ctr1;
-  uint8_t ctr2;
-  for (ctr2 = 0; ctr2 < times; ctr2++)
-    {
-      for (ctr1 = __max_led + 1; ctr1 >= 1; ctr1--)
-	{
-	  PORTB = 0xFF;
-	  PORTB &= ~(1 << fix_led_numbering[ctr1 % 8]);
-	  __delay_ms (delay_time);
-	}
-    }
-  PORTD &= ~((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-}
-
-void
-blink_all_red_times (uint8_t times, int delay_time)
-{
-  uint8_t ctr;
-  PORTD |= ((1 << RED_A));
-  for (ctr = 0; ctr < times; ctr++)
-    {
-      PORTB = 0x00;
-      __delay_ms (delay_time);
-      PORTB = 0xFF;		// off
-      __delay_ms (delay_time);
-    }
-  PORTD &= ~((1 << RED_A));
-}
-
-void
-blink_all_green_times (uint8_t times, int delay_time)
-{
-  uint8_t ctr;
-  PORTD |= ((1 << GREEN_A));
-  for (ctr = 0; ctr < times; ctr++)
-    {
-      PORTB = 0x00;
-      __delay_ms (delay_time);
-      PORTB = 0xFF;		// off
-      __delay_ms (delay_time);
-    }
-  PORTD &= ~((1 << GREEN_A));
-}
-
-void
-blink_all_blue_times (uint8_t times, int delay_time)
-{
-  uint8_t ctr;
-  PORTD |= ((1 << BLUE_A));
-  for (ctr = 0; ctr < times; ctr++)
-    {
-      PORTB = 0x00;
-      __delay_ms (delay_time);
-      PORTB = 0xFF;		// off
-      __delay_ms (delay_time);
-    }
-  PORTD &= ~((1 << BLUE_A));
-}
-
-void
-blink_all_white_times (uint8_t times, int delay_time)
-{
-  uint8_t ctr;
-  PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-  for (ctr = 0; ctr < times; ctr++)
-    {
-      PORTB = 0x00;
-      __delay_ms (delay_time);
-      PORTB = 0xFF;		// off
-      __delay_ms (delay_time);
-    }
-  PORTD &= ~((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
-}
-
-void
-__delay_ms (uint16_t delay_time)
-{
-  /*
-   * this construct is needed to avoid a huge increase in codesize
-   * if _delay_ms() is called like: _delay_ms(var)
-   * instead of _delay_ms(const var)
-   */
-  uint16_t counter;
-  for (counter = 0; counter < delay_time; counter++)
-    {
-      _delay_ms (1);
-    }
-}
-
 
 /*
- * all functions below are related to PWM mode !
+ * PWM_BLOCK_START: all functions in this block are related to PWM mode !
  */
 
 /*
@@ -703,3 +787,7 @@ ISR (TIMER1_OVF_vect)
     }
   PORTB = 0xFF;			// all cathodes HIGH --> OFF
 }
+
+/*
+ * PWM_BLOCK_END: all functions in this block are related to PWM mode !
+ */
