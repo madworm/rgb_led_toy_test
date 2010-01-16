@@ -1,5 +1,5 @@
 /*
- * 2009 - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
+ * 2010-01-16 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
 
 /*
@@ -95,7 +95,7 @@ loop (void)
   //OSCCAL = 104;            // SLAVE board
 #endif
 
-enable_timer1_ovf ();
+enable_timer1_ovf (); // start PWM mode
   int ctr;
   for (ctr = 0; ctr < 2; ctr++)
     {
@@ -109,7 +109,7 @@ enable_timer1_ovf ();
     {
       color_wave (30);
     }
-disable_timer1_ovf ();
+disable_timer1_ovf (); // end PWM mode
 
   sync(4*__sync_delay); 
   blink_all_red_times (10, 20);
@@ -122,7 +122,9 @@ disable_timer1_ovf ();
 
 #ifdef MASTER
   sync(__sync_delay);
-  wobble(RED,CW,10,80);
+  wobble2(wobble_pattern_1,8,RED,CW,10,80);
+  sync(__sync_delay);
+  wobble2(wobble_pattern_1,8,YELLOW,CW,10,80);
   sync(__sync_delay);
   white_clockwise (10, 20);
   sync(__sync_delay);
@@ -145,7 +147,9 @@ disable_timer1_ovf ();
 
 #ifdef SLAVE
   sync(__sync_delay);
-  wobble(RED,CCW,10,80);
+  wobble2(wobble_pattern_2,8,RED,CCW,10,80);
+  sync(__sync_delay);
+  wobble2(wobble_pattern_2,8,YELLOW,CCW,10,80);
   sync(__sync_delay);
   white_counterclockwise (10, 20);
   sync(__sync_delay);
@@ -356,59 +360,63 @@ set_byte(unsigned char data_byte)
 }
 
 void
-wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
+wobble2 (uint8_t *wobble_pattern_ptr, uint8_t pattern_length, enum COLOR_t led_color, enum DIRECTION_t direction,
 	      uint8_t times, int delay_time)
 {
-  uint8_t ctr;
+  uint8_t ctr1;
+  uint8_t ctr2;
   color_on(led_color);
   switch (direction)
     {
     case CW:
-      for (ctr = 0; ctr < times; ctr++)
+      for (ctr1 = 0; ctr1 < times; ctr1++)
 	{
-          set_byte(B01000000);
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
-          set_byte(B00010001);
-	  __delay_ms(delay_time);
-          set_byte(B00001010);
-	  __delay_ms(delay_time);
-          set_byte(B00000100);
-	  __delay_ms(delay_time);
-          set_byte(B00001010); 
-	  __delay_ms(delay_time);
-          set_byte(B00010001); 
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
+          for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
+          {
+            set_byte(wobble_pattern_ptr[ctr2]);
+            __delay_ms(delay_time);
+          }  
 	}
       break;
     case CCW:
-      for (ctr = 0; ctr < times; ctr++)
+      for (ctr1 = 0; ctr1 < times; ctr1++)
 	{
-          set_byte(B00000100);
-	  __delay_ms(delay_time);
-          set_byte(B00001010);
-	  __delay_ms(delay_time);
-          set_byte(B00010001);
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
-          set_byte(B01000000);
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
-          set_byte(B00010001);
-	  __delay_ms(delay_time);
-          set_byte(B00001010);
-	  __delay_ms(delay_time);
+          for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
+          {
+            set_byte(rotate_byte(wobble_pattern_ptr[ctr2],4,CW));
+            __delay_ms(delay_time);
+          } 
 	}
       break;
     default:
       break;
     }
   color_off(led_color);
+}
+
+uint8_t
+rotate_byte(uint8_t in_byte, uint8_t steps, enum DIRECTION_t direction)
+{
+  uint8_t result = in_byte;
+  uint8_t ctr1;
+  switch(direction)
+  {
+    case CW:
+      for (ctr1 = 0; ctr1 < steps; ctr1 ++)
+      {
+        result = (result << 7) | (result >> 1);
+      }
+    break;
+    case CCW:
+      for (ctr1 = 0; ctr1 < steps; ctr1 ++)
+      {
+        result = (result >> 7) | (result << 1);
+      }
+    break;
+    default:
+    break;
+  }
+  return result;
 }
 
 void
@@ -791,3 +799,64 @@ ISR (TIMER1_OVF_vect)
 /*
  * PWM_BLOCK_END: all functions in this block are related to PWM mode !
  */
+ 
+ 
+/*
+ * obsolete functions, only kept for reference
+ */
+  
+void
+wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
+	      uint8_t times, int delay_time)
+{
+  uint8_t ctr;
+  color_on(led_color);
+  switch (direction)
+    {
+    case CW:
+      for (ctr = 0; ctr < times; ctr++)
+	{
+          set_byte(B01000000);
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+          set_byte(B00010001);
+	  __delay_ms(delay_time);
+          set_byte(B00001010);
+	  __delay_ms(delay_time);
+          set_byte(B00000100);
+	  __delay_ms(delay_time);
+          set_byte(B00001010); 
+	  __delay_ms(delay_time);
+          set_byte(B00010001); 
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+	}
+      break;
+    case CCW:
+      for (ctr = 0; ctr < times; ctr++)
+	{
+          set_byte(B00000100);
+	  __delay_ms(delay_time);
+          set_byte(B00001010);
+	  __delay_ms(delay_time);
+          set_byte(B00010001);
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+          set_byte(B01000000);
+	  __delay_ms(delay_time);
+          set_byte(B10100000);
+	  __delay_ms(delay_time);
+          set_byte(B00010001);
+	  __delay_ms(delay_time);
+          set_byte(B00001010);
+	  __delay_ms(delay_time);
+	}
+      break;
+    default:
+      break;
+    }
+  color_off(led_color);
+}

@@ -1,7 +1,12 @@
 /*
-Fix for Arduino IDE
-Normally this could just be in the main source code file
-*/
+ * including WProgram.h to get the definitions for B00000000, B00000001 , ...
+ */
+#include "WProgram.h"
+
+/*
+ * Fix for Arduino IDE
+ * Normally this could just be in the main source code file
+ */
 
 enum COLOR_t
 {
@@ -19,6 +24,7 @@ enum DIRECTION_t
   CW,
   CCW
 };
+
 
 // PORT-FIX for ATmega328 on windows + Arduino IDE
 /*
@@ -52,8 +58,8 @@ enum DIRECTION_t
 
 
 /*
-Nicer naming of the pins
-*/
+ * Nicer naming of the pins
+ */
 #define LED0 PB0
 #define LED1 PB1
 #define LED2 PB2
@@ -66,3 +72,22 @@ Nicer naming of the pins
 #define RED_A PD5
 #define GREEN_A PD6
 #define BLUE_A PD7
+
+
+/*
+ * wobble patterns
+ *
+ * defined for CW mode.
+ * CCW data is calculated automatically by rotating 4 steps to the right
+ * the code expects arrays of uint8_t
+ * the number of lines is variable and must be specified in the function call
+ */
+ 
+ uint8_t wobble_pattern_1[8] = {B01000000,
+                                B10100000,
+                                B00010001,
+                                B00001010,
+                                B00000100,
+                                B00001010,
+                                B00010001, 
+                                B10100000};
