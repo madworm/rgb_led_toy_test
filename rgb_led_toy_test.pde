@@ -124,7 +124,7 @@ loop (void)
   sync (__sync_delay);
   wobble2 (wobble_pattern_1, 8, RED, CW, 10, 80);
   sync (__sync_delay);
-  wobble2 (wobble_pattern_1, 8, YELLOW, CW, 10, 80);
+  wobble2 (wobble_pattern_3, 8, YELLOW, CW, 10, 80);
   sync (__sync_delay);
   white_clockwise (10, 20);
   sync (__sync_delay);
@@ -147,9 +147,9 @@ loop (void)
 
 #ifdef SLAVE
   sync (__sync_delay);
-  wobble2 (wobble_pattern_2, 8, RED, CCW, 10, 80);
+  wobble2 (wobble_pattern_1, 8, RED, CCW, 10, 80);
   sync (__sync_delay);
-  wobble2 (wobble_pattern_2, 8, YELLOW, CCW, 10, 80);
+  wobble2 (wobble_pattern_3, 8, YELLOW, CCW, 10, 80);
   sync (__sync_delay);
   white_counterclockwise (10, 20);
   sync (__sync_delay);
