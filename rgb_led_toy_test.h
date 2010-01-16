@@ -82,12 +82,14 @@ enum DIRECTION_t
  * the code expects arrays of uint8_t
  * the number of lines is variable and must be specified in the function call
  */
- 
- uint8_t wobble_pattern_1[8] = {B01000000,
-                                B10100000,
-                                B00010001,
-                                B00001010,
-                                B00000100,
-                                B00001010,
-                                B00010001, 
-                                B10100000};
+
+uint8_t wobble_pattern_1[8] = {
+  B01000000,
+  B10100000,
+  B00010001,
+  B00001010,
+  B00000100,
+  B00001010,
+  B00010001,
+  B10100000
+};

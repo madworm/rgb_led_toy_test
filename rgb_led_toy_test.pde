@@ -88,14 +88,14 @@ loop (void)
  * You need to determine them yourself. The easiest way is to make a LED blink for a well defined time and use an oscilloscope
  * to measure it. Adjust 'OSCCAL' to make the time right. There is some code on my blog to show how it may work for you.
  */
-#define __sync_delay 75    // this really needs to be fixed by a much better oscillator calibration --> new digital scope !
+#define __sync_delay 75		// this really needs to be fixed by a much better oscillator calibration --> new digital scope !
 #ifdef MASTER
   //OSCCAL = 122;            // MASTER board
 #else
   //OSCCAL = 104;            // SLAVE board
 #endif
 
-enable_timer1_ovf (); // start PWM mode
+  enable_timer1_ovf ();		// start PWM mode
   int ctr;
   for (ctr = 0; ctr < 2; ctr++)
     {
@@ -109,77 +109,79 @@ enable_timer1_ovf (); // start PWM mode
     {
       color_wave (30);
     }
-disable_timer1_ovf (); // end PWM mode
+  disable_timer1_ovf ();	// end PWM mode
 
-  sync(4*__sync_delay); 
+  sync (4 * __sync_delay);
   blink_all_red_times (10, 20);
-  sync(__sync_delay);  
+  sync (__sync_delay);
   blink_all_green_times (10, 20);
-  sync(__sync_delay);
+  sync (__sync_delay);
   blink_all_blue_times (10, 20);
-  sync(__sync_delay);  
+  sync (__sync_delay);
   blink_all_white_times (10, 20);
 
 #ifdef MASTER
-  sync(__sync_delay);
-  wobble2(wobble_pattern_1,8,RED,CW,10,80);
-  sync(__sync_delay);
-  wobble2(wobble_pattern_1,8,YELLOW,CW,10,80);
-  sync(__sync_delay);
+  sync (__sync_delay);
+  wobble2 (wobble_pattern_1, 8, RED, CW, 10, 80);
+  sync (__sync_delay);
+  wobble2 (wobble_pattern_1, 8, YELLOW, CW, 10, 80);
+  sync (__sync_delay);
   white_clockwise (10, 20);
-  sync(__sync_delay);
+  sync (__sync_delay);
   white_counterclockwise (10, 20);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (BLUE, CCW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (GREEN, CW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (RED, CCW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (YELLOW, CW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (TURQUOISE, CCW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (PURPLE, CW, 15, 75);
-  sync(__sync_delay);  
+  sync (__sync_delay);
   rotating_bar (WHITE, CCW, 15, 75);
 #endif
 
 #ifdef SLAVE
-  sync(__sync_delay);
-  wobble2(wobble_pattern_2,8,RED,CCW,10,80);
-  sync(__sync_delay);
-  wobble2(wobble_pattern_2,8,YELLOW,CCW,10,80);
-  sync(__sync_delay);
+  sync (__sync_delay);
+  wobble2 (wobble_pattern_2, 8, RED, CCW, 10, 80);
+  sync (__sync_delay);
+  wobble2 (wobble_pattern_2, 8, YELLOW, CCW, 10, 80);
+  sync (__sync_delay);
   white_counterclockwise (10, 20);
-  sync(__sync_delay);
+  sync (__sync_delay);
   white_clockwise (10, 20);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (BLUE, CW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (GREEN, CCW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (RED, CW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (YELLOW, CCW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (TURQUOISE, CW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (PURPLE, CCW, 15, 75);
-  sync(__sync_delay);
+  sync (__sync_delay);
   rotating_bar (WHITE, CW, 15, 75);
 #endif
 }
 
-void sync(int sync_delay) {
+void
+sync (int sync_delay)
+{
 #ifdef MASTER
-__delay_ms (sync_delay);
-DDRC |= ((1 << PC4));    // PC4 is an output
-PORTC &= ~((1 << PC4));  // set PC4 low
-__delay_ms (1);
-PORTC |= ((1 << PC4));  // set PC4 high
-DDRC &= ~((1 << PC4));  // PC4 is an input
-PORTC |= ((1 << PC4));  // internal pull-up on
+  __delay_ms (sync_delay);
+  DDRC |= ((1 << PC4));		// PC4 is an output
+  PORTC &= ~((1 << PC4));	// set PC4 low
+  __delay_ms (1);
+  PORTC |= ((1 << PC4));	// set PC4 high
+  DDRC &= ~((1 << PC4));	// PC4 is an input
+  PORTC |= ((1 << PC4));	// internal pull-up on
 #endif
 
 #ifdef SLAVE
@@ -196,7 +198,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
 {
   uint8_t ctr1;
   uint8_t ctr2;
-  color_on(led_color);
+  color_on (led_color);
   switch (direction)
     {
     case CW:
@@ -228,13 +230,13 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
     default:
       break;
     }
-  color_off(led_color);
+  color_off (led_color);
 }
 
 void
 white_clockwise (uint8_t times, int delay_time)
 {
-  color_on(WHITE);
+  color_on (WHITE);
   uint8_t ctr1;
   uint8_t ctr2;
   for (ctr2 = 0; ctr2 < times; ctr2++)
@@ -246,13 +248,13 @@ white_clockwise (uint8_t times, int delay_time)
 	  __delay_ms (delay_time);
 	}
     }
-  color_off(WHITE);
+  color_off (WHITE);
 }
 
 void
 white_counterclockwise (uint8_t times, int delay_time)
 {
-  color_on(WHITE);
+  color_on (WHITE);
   uint8_t ctr1;
   uint8_t ctr2;
   for (ctr2 = 0; ctr2 < times; ctr2++)
@@ -264,14 +266,14 @@ white_counterclockwise (uint8_t times, int delay_time)
 	  __delay_ms (delay_time);
 	}
     }
-  color_off(WHITE);
+  color_off (WHITE);
 }
 
 void
 blink_all_red_times (uint8_t times, int delay_time)
 {
   uint8_t ctr;
-  color_on(RED);
+  color_on (RED);
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
@@ -279,14 +281,14 @@ blink_all_red_times (uint8_t times, int delay_time)
       PORTB = 0xFF;		// off
       __delay_ms (delay_time);
     }
-  color_off(RED);
+  color_off (RED);
 }
 
 void
 blink_all_green_times (uint8_t times, int delay_time)
 {
   uint8_t ctr;
-  color_on(GREEN);
+  color_on (GREEN);
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
@@ -294,14 +296,14 @@ blink_all_green_times (uint8_t times, int delay_time)
       PORTB = 0xFF;		// off
       __delay_ms (delay_time);
     }
-  color_off(GREEN);
+  color_off (GREEN);
 }
 
 void
 blink_all_blue_times (uint8_t times, int delay_time)
 {
   uint8_t ctr;
-  color_on(BLUE);
+  color_on (BLUE);
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
@@ -309,14 +311,14 @@ blink_all_blue_times (uint8_t times, int delay_time)
       PORTB = 0xFF;		// off
       __delay_ms (delay_time);
     }
-  color_off(BLUE);
+  color_off (BLUE);
 }
 
 void
 blink_all_white_times (uint8_t times, int delay_time)
 {
   uint8_t ctr;
-  color_on(WHITE);
+  color_on (WHITE);
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
@@ -324,7 +326,7 @@ blink_all_white_times (uint8_t times, int delay_time)
       PORTB = 0xFF;		// off
       __delay_ms (delay_time);
     }
-  color_off(WHITE);
+  color_off (WHITE);
 }
 
 void
@@ -343,85 +345,89 @@ __delay_ms (uint16_t delay_time)
 }
 
 void
-set_byte(unsigned char data_byte)
+set_byte (unsigned char data_byte)
 {
   unsigned char ctr;
   unsigned char what_bit;
-  for(ctr=0; ctr<=7; ctr++)
-  {
-    what_bit = (1<<ctr);
-    if( data_byte & what_bit) {
-      PORTB &= ~(1<<fix_led_numbering[ctr]); // cathode low, LED on
+  for (ctr = 0; ctr <= 7; ctr++)
+    {
+      what_bit = (1 << ctr);
+      if (data_byte & what_bit)
+	{
+	  PORTB &= ~(1 << fix_led_numbering[ctr]);	// cathode low, LED on
+	}
+      else
+	{
+	  PORTB |= (1 << fix_led_numbering[ctr]);
+	}
     }
-    else {
-      PORTB |= (1<<fix_led_numbering[ctr]);
-    }
-  } 
 }
 
 void
-wobble2 (uint8_t *wobble_pattern_ptr, uint8_t pattern_length, enum COLOR_t led_color, enum DIRECTION_t direction,
-	      uint8_t times, int delay_time)
+wobble2 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length,
+	 enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
+	 int delay_time)
 {
   uint8_t ctr1;
   uint8_t ctr2;
-  color_on(led_color);
+  color_on (led_color);
   switch (direction)
     {
     case CW:
       for (ctr1 = 0; ctr1 < times; ctr1++)
 	{
-          for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
-          {
-            set_byte(wobble_pattern_ptr[ctr2]);
-            __delay_ms(delay_time);
-          }  
+	  for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
+	    {
+	      set_byte (wobble_pattern_ptr[ctr2]);
+	      __delay_ms (delay_time);
+	    }
 	}
       break;
     case CCW:
       for (ctr1 = 0; ctr1 < times; ctr1++)
 	{
-          for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
-          {
-            set_byte(rotate_byte(wobble_pattern_ptr[ctr2],4,CW));
-            __delay_ms(delay_time);
-          } 
+	  for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
+	    {
+	      set_byte (rotate_byte (wobble_pattern_ptr[ctr2], 4, CW));
+	      __delay_ms (delay_time);
+	    }
 	}
       break;
     default:
       break;
     }
-  color_off(led_color);
+  color_off (led_color);
 }
 
 uint8_t
-rotate_byte(uint8_t in_byte, uint8_t steps, enum DIRECTION_t direction)
+rotate_byte (uint8_t in_byte, uint8_t steps, enum DIRECTION_t direction)
 {
   uint8_t result = in_byte;
   uint8_t ctr1;
-  switch(direction)
-  {
+  switch (direction)
+    {
     case CW:
-      for (ctr1 = 0; ctr1 < steps; ctr1 ++)
-      {
-        result = (result << 7) | (result >> 1);
-      }
-    break;
+      for (ctr1 = 0; ctr1 < steps; ctr1++)
+	{
+	  result = (result << 7) | (result >> 1);
+	}
+      break;
     case CCW:
-      for (ctr1 = 0; ctr1 < steps; ctr1 ++)
-      {
-        result = (result >> 7) | (result << 1);
-      }
-    break;
+      for (ctr1 = 0; ctr1 < steps; ctr1++)
+	{
+	  result = (result >> 7) | (result << 1);
+	}
+      break;
     default:
-    break;
-  }
+      break;
+    }
   return result;
 }
 
 void
-color_on(enum COLOR_t led_color) {
-    switch (led_color)
+color_on (enum COLOR_t led_color)
+{
+  switch (led_color)
     {				// turn ON the necessary anodes
     case RED:
       PORTD |= ((1 << RED_A));
@@ -450,8 +456,9 @@ color_on(enum COLOR_t led_color) {
 }
 
 void
-color_off(enum COLOR_t led_color) {
-    switch (led_color)
+color_off (enum COLOR_t led_color)
+{
+  switch (led_color)
     {				// turn OFF the anodes again when we're done
     case RED:
       PORTD &= ~((1 << RED_A));
@@ -799,64 +806,64 @@ ISR (TIMER1_OVF_vect)
 /*
  * PWM_BLOCK_END: all functions in this block are related to PWM mode !
  */
- 
- 
+
+
 /*
  * obsolete functions, only kept for reference
  */
-  
+
 void
 wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
-	      uint8_t times, int delay_time)
+	uint8_t times, int delay_time)
 {
   uint8_t ctr;
-  color_on(led_color);
+  color_on (led_color);
   switch (direction)
     {
     case CW:
       for (ctr = 0; ctr < times; ctr++)
 	{
-          set_byte(B01000000);
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
-          set_byte(B00010001);
-	  __delay_ms(delay_time);
-          set_byte(B00001010);
-	  __delay_ms(delay_time);
-          set_byte(B00000100);
-	  __delay_ms(delay_time);
-          set_byte(B00001010); 
-	  __delay_ms(delay_time);
-          set_byte(B00010001); 
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
+	  set_byte (B01000000);
+	  __delay_ms (delay_time);
+	  set_byte (B10100000);
+	  __delay_ms (delay_time);
+	  set_byte (B00010001);
+	  __delay_ms (delay_time);
+	  set_byte (B00001010);
+	  __delay_ms (delay_time);
+	  set_byte (B00000100);
+	  __delay_ms (delay_time);
+	  set_byte (B00001010);
+	  __delay_ms (delay_time);
+	  set_byte (B00010001);
+	  __delay_ms (delay_time);
+	  set_byte (B10100000);
+	  __delay_ms (delay_time);
 	}
       break;
     case CCW:
       for (ctr = 0; ctr < times; ctr++)
 	{
-          set_byte(B00000100);
-	  __delay_ms(delay_time);
-          set_byte(B00001010);
-	  __delay_ms(delay_time);
-          set_byte(B00010001);
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
-          set_byte(B01000000);
-	  __delay_ms(delay_time);
-          set_byte(B10100000);
-	  __delay_ms(delay_time);
-          set_byte(B00010001);
-	  __delay_ms(delay_time);
-          set_byte(B00001010);
-	  __delay_ms(delay_time);
+	  set_byte (B00000100);
+	  __delay_ms (delay_time);
+	  set_byte (B00001010);
+	  __delay_ms (delay_time);
+	  set_byte (B00010001);
+	  __delay_ms (delay_time);
+	  set_byte (B10100000);
+	  __delay_ms (delay_time);
+	  set_byte (B01000000);
+	  __delay_ms (delay_time);
+	  set_byte (B10100000);
+	  __delay_ms (delay_time);
+	  set_byte (B00010001);
+	  __delay_ms (delay_time);
+	  set_byte (B00001010);
+	  __delay_ms (delay_time);
 	}
       break;
     default:
       break;
     }
-  color_off(led_color);
+  color_off (led_color);
 }
