@@ -1,9 +1,4 @@
 /*
- * including WProgram.h to get the definitions for B00000000, B00000001 , ...
- */
-#include "WProgram.h"
-
-/*
  * Fix for Arduino IDE
  * Normally this could just be in the main source code file
  */
@@ -84,30 +79,30 @@ enum DIRECTION_t
  */
 
 uint8_t wobble_pattern_1[8] = {
-  B01000000,
-  B10100000,
-  B00010001,
-  B00001010,
-  B00000100,
-  B00001010,
-  B00010001,
-  B10100000
+  0b01000000,
+  0b10100000,
+  0b00010001,
+  0b00001010,
+  0b00000100,
+  0b00001010,
+  0b00010001,
+  0b10100000
 };
 
 uint8_t wobble_pattern_2[8] = {
-  B01000100,
-  B10101010,
-  B00010001,
-  B10101010
+  0b01000100,
+  0b10101010,
+  0b00010001,
+  0b10101010
 };
 
 uint8_t wobble_pattern_3[8] = {
-  B11000111,
-  B11000110,
-  B01000100,
-  B01101100,
-  B01111100,
-  B01101100,
-  B01000100,
-  B11000110
+  0b11000111,
+  0b11000110,
+  0b01000100,
+  0b01101100,
+  0b01111100,
+  0b01101100,
+  0b01000100,
+  0b11000110
 };
