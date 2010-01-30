@@ -1,5 +1,5 @@
 /*
- * 2010-01-16 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
+ * 2010-01-30 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
 
 /*
@@ -44,11 +44,15 @@
 #include <avr/pgmspace.h>
 #include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
-uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// the PCBs I got still have an error, as the updated design wasn't taken into account by the fab house it seems
+/*
+ * uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// the PCBs I got still have an error, as the updated design wasn't taken into account by the fab house it seems
+ */
 
-byte brightness_red[__leds];	/* memory for RED LEDs */
-byte brightness_green[__leds];	/* memory for GREEN LEDs */
-byte brightness_blue[__leds];	/* memory for BLUE LEDs */
+uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 }; // up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
+
+uint8_t brightness_red[__leds];	/* memory for RED LEDs */
+uint8_t brightness_green[__leds];	/* memory for GREEN LEDs */
+uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
 
 #define YES 1
 #define NO 0
@@ -497,14 +501,14 @@ color_off (enum COLOR_t led_color)
 void
 random_leds (void)
 {
-  set_led_hue ((byte) (random (__leds)), (unsigned int) (random (360)));
+  set_led_hue ((uint8_t) (random (__leds)), (unsigned int) (random (360)));
 }
 
 void
 fader (void)
 {				/* fade the matrix form BLACK to WHITE and back */
-  byte ctr1;
-  byte led;
+  uint8_t ctr1;
+  uint8_t led;
 
   for (ctr1 = 0; ctr1 <= __max_brightness; ctr1++)
     {
@@ -539,7 +543,7 @@ fader_hue (void)
 void
 color_wave (int width)
 {
-  byte led;
+  uint8_t led;
   static unsigned int shift = 0;
   for (led = 0; led <= __max_led; led++)
     {
@@ -554,7 +558,7 @@ color_wave (int width)
  */
 
 void
-set_led_red (byte led, byte red)
+set_led_red (uint8_t led, uint8_t red)
 {
 #if (DOTCORR == YES)
   int8_t dotcorr =
@@ -575,7 +579,7 @@ set_led_red (byte led, byte red)
 }
 
 void
-set_led_green (byte led, byte green)
+set_led_green (uint8_t led, uint8_t green)
 {
 #if (DOTCORR == YES)
   int8_t dotcorr =
@@ -597,7 +601,7 @@ set_led_green (byte led, byte green)
 }
 
 void
-set_led_blue (byte led, byte blue)
+set_led_blue (uint8_t led, uint8_t blue)
 {
 #if (DOTCORR == YES)
   int8_t dotcorr =
@@ -619,7 +623,7 @@ set_led_blue (byte led, byte blue)
 }
 
 void
-set_led_rgb (byte led, byte red, byte green, byte blue)
+set_led_rgb (uint8_t led, uint8_t red, uint8_t green, uint8_t blue)
 {
   set_led_red (led, red);
   set_led_green (led, green);
@@ -627,9 +631,9 @@ set_led_rgb (byte led, byte red, byte green, byte blue)
 }
 
 void
-set_all_rgb (byte red, byte green, byte blue)
+set_all_rgb (uint8_t red, uint8_t green, uint8_t blue)
 {
-  byte ctr1;
+  uint8_t ctr1;
   for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
     {
       set_led_rgb (ctr1, red, green, blue);
@@ -639,7 +643,7 @@ set_all_rgb (byte red, byte green, byte blue)
 void
 set_all_hue (unsigned int hue)
 {
-  byte ctr1;
+  uint8_t ctr1;
   for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
     {
       set_led_hue (ctr1, hue);
@@ -647,14 +651,14 @@ set_all_hue (unsigned int hue)
 }
 
 void
-set_led_hue (byte led, unsigned int hue)
+set_led_hue (uint8_t led, unsigned int hue)
 {
 
   /* finally thrown out all of the float stuff and replaced with unsigned int */
 
   hue = hue % 360;
-  byte sector = hue / 60;
-  byte rel_pos = hue - (hue / 60) * 60;
+  uint8_t sector = hue / 60;
+  uint8_t rel_pos = hue - (hue / 60) * 60;
   unsigned int modulation_depth = 0xFFFF;
   unsigned int slope = modulation_depth / 120;	/* 2*60 */
   unsigned int a = slope * rel_pos;
@@ -703,17 +707,17 @@ set_led_hue (byte led, unsigned int hue)
 
   unsigned int scale_factor = modulation_depth / __max_brightness;
 
-  R = (byte) (R / scale_factor);
-  G = (byte) (G / scale_factor);
-  B = (byte) (B / scale_factor);
+  R = (uint8_t) (R / scale_factor);
+  G = (uint8_t) (G / scale_factor);
+  B = (uint8_t) (B / scale_factor);
 
   set_led_rgb (led, R, G, B);
 }
 
 void
-set_all_byte_hue (byte data_byte, unsigned int hue)
+set_all_byte_hue (uint8_t data_byte, unsigned int hue)
 {
-  byte led;
+  uint8_t led;
   for (led = 0; led <= __max_led; led++)
     {
       if ((data_byte >> led) & (B00000001))
@@ -772,11 +776,11 @@ disable_timer1_ovf (void)
 ISR (TIMER1_OVF_vect)
 {				/* Framebuffer interrupt routine */
   TCNT1 = __TIMER1_MAX - __TIMER1_CNT;
-  byte cycle;
+  uint8_t cycle;
 
   for (cycle = 0; cycle < __max_brightness; cycle++)
     {
-      byte led;
+      uint8_t led;
       for (led = 0; led <= __max_led; led++)
 	{
 
