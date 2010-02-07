@@ -1,5 +1,5 @@
 /*
- * 2010-01-30 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
+ * 2010-02-07 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
 
 /*
@@ -16,19 +16,47 @@
  */
 
 /*
+ * For boards that support auto-reset (version >= 1.21 or DTR printed on PCB): 
+ *
  * If you use an Arduino bootloader, I recommend the "ATmegaBOOT_168_pro_8MHz.hex".
  * Set the FUSE bytes to: LFUSE:0xE2 - HFUSE:0xDD - EFUSE:0x00 (avrdude convention)
+ *
+ *
+ * For all other boards:
+ *
+ * If you use an Arduino bootloader, I recommend the "LilyPadBOOT_168.hex".
+ * Set the FUSE bytes to: LFUSE:0xE2 - HFUSE:0xDD - EFUSE:0x00 (avrdude convention)
+ *
  */
+
+
+/*
+ * Select debugging mode
+ */
+
+//#define DEBUG_BLINK
 
 
 /*
  * Select if the board is a MASTER (sends sync pulse), or a slave (waits for sync pulse)
  */
+
 #define MASTER
 
 #ifndef MASTER
 #define SLAVE
 #endif
+
+
+/*
+ * Select which board revision you have: OLD_PCB (10138), NEW_PCB (with DTR or >= 1.21)
+ */ 
+
+#define NEW_PCB
+//#define OLD_PCB
+
+
+//#define DOTCORR  /* enable/disable dot correction */
 
 
 #define __leds 8
@@ -40,8 +68,7 @@
 #define __TIMER1_MAX 0xFFFF	// 16 bit CTR
 #define __TIMER1_CNT 0x0030	//
 
-#define F_CPU 8000000UL
-#define __AVR_ATmega168__
+
 #include <util/delay.h>
 #include <stdint.h>
 #include <avr/io.h>
@@ -49,28 +76,28 @@
 #include <avr/pgmspace.h>
 #include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
-/*
- * uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// the PCBs I got still have an error, as the updated design wasn't taken into account by the fab house it seems
- */
-
-uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 }; // up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
 
 uint8_t brightness_red[__leds];	/* memory for RED LEDs */
 uint8_t brightness_green[__leds];	/* memory for GREEN LEDs */
 uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
 
-#define YES 1
-#define NO 0
-#define DOTCORR NO		/* enable/disable dot correction */
 
-#if (DOTCORR == YES)
+#ifdef DOTCORR
 const int8_t PROGMEM dotcorr_red[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 const int8_t PROGMEM dotcorr_green[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 const int8_t PROGMEM dotcorr_blue[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-
 #define __fade_delay 5
 #else
 #define __fade_delay 5
+#endif
+
+
+#ifdef NEW_PCB
+uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 }; // up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
+#endif
+
+#ifdef OLD_PCB
+uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 }; // this is necessary for older revisions (without DTR or >= 1.21 printed on the PCB)
 #endif
 
 
@@ -102,6 +129,18 @@ loop (void)
   //OSCCAL = 122;            // MASTER board
 #else
   //OSCCAL = 104;            // SLAVE board
+#endif
+
+#ifdef DEBUG_BLINK
+  color_on (WHITE);
+  while(1) {
+    uint8_t ctr;
+    for (ctr=0; ctr<=7; ctr++) {
+      PORTB = 0xFF;
+      PORTB &= ~(1 << fix_led_numbering[ctr]);
+      __delay_ms (1000);
+    } 
+  }
 #endif
 
   enable_timer1_ovf ();		// start PWM mode
@@ -565,7 +604,7 @@ color_wave (int width)
 void
 set_led_red (uint8_t led, uint8_t red)
 {
-#if (DOTCORR == YES)
+#ifdef DOTCORR
   int8_t dotcorr =
     (int8_t) (pgm_read_byte (&dotcorr_red[led])) * red / __brightness_levels;
   uint8_t value;
@@ -586,7 +625,7 @@ set_led_red (uint8_t led, uint8_t red)
 void
 set_led_green (uint8_t led, uint8_t green)
 {
-#if (DOTCORR == YES)
+#ifdef DOTCORR
   int8_t dotcorr =
     (int8_t) (pgm_read_byte (&dotcorr_green[led])) * green /
     __brightness_levels;
@@ -608,7 +647,7 @@ set_led_green (uint8_t led, uint8_t green)
 void
 set_led_blue (uint8_t led, uint8_t blue)
 {
-#if (DOTCORR == YES)
+#ifdef DOTCORR
   int8_t dotcorr =
     (int8_t) (pgm_read_byte (&dotcorr_blue[led])) * blue /
     __brightness_levels;
