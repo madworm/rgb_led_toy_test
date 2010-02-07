@@ -15,6 +15,11 @@
  * so up-to-date version of winavr. "portpins.h" doesn't have the mapping between the old style PB0 and newer PORTB0 names.
  */
 
+/*
+ * If you use an Arduino bootloader, I recommend the "ATmegaBOOT_168_pro_8MHz.hex".
+ * Set the FUSE bytes to: LFUSE:0xE2 - HFUSE:0xDD - EFUSE:0x00 (avrdude convention)
+ */
+
 
 /*
  * Select if the board is a MASTER (sends sync pulse), or a slave (waits for sync pulse)
