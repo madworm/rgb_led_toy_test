@@ -144,7 +144,7 @@ loop (void)
 #endif
 
   enable_timer1_ovf ();		// start PWM mode
-  int ctr;
+  uint16_t ctr;
   for (ctr = 0; ctr < 2; ctr++)
     {
       fader ();
@@ -220,7 +220,7 @@ loop (void)
 }
 
 void
-sync (int sync_delay)
+sync (uint8_t sync_delay)
 {
 #ifdef MASTER
   __delay_ms (sync_delay);
@@ -242,7 +242,7 @@ sync (int sync_delay)
 
 void
 rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
-	      uint8_t times, int delay_time)
+	      uint8_t times, uint16_t delay_time)
 {
   uint8_t ctr1;
   uint8_t ctr2;
@@ -282,7 +282,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
 }
 
 void
-white_clockwise (uint8_t times, int delay_time)
+white_clockwise (uint8_t times, uint16_t delay_time)
 {
   color_on (WHITE);
   uint8_t ctr1;
@@ -300,7 +300,7 @@ white_clockwise (uint8_t times, int delay_time)
 }
 
 void
-white_counterclockwise (uint8_t times, int delay_time)
+white_counterclockwise (uint8_t times, uint16_t delay_time)
 {
   color_on (WHITE);
   uint8_t ctr1;
@@ -318,7 +318,7 @@ white_counterclockwise (uint8_t times, int delay_time)
 }
 
 void
-blink_all_red_times (uint8_t times, int delay_time)
+blink_all_red_times (uint8_t times, uint16_t delay_time)
 {
   uint8_t ctr;
   color_on (RED);
@@ -333,7 +333,7 @@ blink_all_red_times (uint8_t times, int delay_time)
 }
 
 void
-blink_all_green_times (uint8_t times, int delay_time)
+blink_all_green_times (uint8_t times, uint16_t delay_time)
 {
   uint8_t ctr;
   color_on (GREEN);
@@ -348,7 +348,7 @@ blink_all_green_times (uint8_t times, int delay_time)
 }
 
 void
-blink_all_blue_times (uint8_t times, int delay_time)
+blink_all_blue_times (uint8_t times, uint16_t delay_time)
 {
   uint8_t ctr;
   color_on (BLUE);
@@ -363,7 +363,7 @@ blink_all_blue_times (uint8_t times, int delay_time)
 }
 
 void
-blink_all_white_times (uint8_t times, int delay_time)
+blink_all_white_times (uint8_t times, uint16_t delay_time)
 {
   uint8_t ctr;
   color_on (WHITE);
@@ -393,10 +393,10 @@ __delay_ms (uint16_t delay_time)
 }
 
 void
-set_byte (unsigned char data_byte)
+set_byte (uint8_t data_byte)
 {
-  unsigned char ctr;
-  unsigned char what_bit;
+  uint8_t ctr;
+  uint8_t what_bit;
   for (ctr = 0; ctr <= 7; ctr++)
     {
       what_bit = (1 << ctr);
@@ -414,7 +414,7 @@ set_byte (unsigned char data_byte)
 void
 wobble2 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length,
 	 enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
-	 int delay_time)
+	 uint16_t delay_time)
 {
   uint8_t ctr1;
   uint8_t ctr2;
@@ -545,7 +545,7 @@ color_off (enum COLOR_t led_color)
 void
 random_leds (void)
 {
-  set_led_hue ((uint8_t) (random (__leds)), (unsigned int) (random (360)));
+  set_led_hue ((uint8_t) (random (__leds)), (uint16_t) (random (360)));
 }
 
 void
@@ -576,7 +576,7 @@ fader (void)
 void
 fader_hue (void)
 {				/* cycle the color of the whole matrix */
-  int ctr1;
+  uint16_t ctr1;
   for (ctr1 = 0; ctr1 < 360; ctr1 = ctr1 + 3)
     {
       set_all_hue (ctr1);
@@ -585,13 +585,13 @@ fader_hue (void)
 }
 
 void
-color_wave (int width)
+color_wave (uint8_t width)
 {
   uint8_t led;
-  static unsigned int shift = 0;
+  static uint16_t shift = 0;
   for (led = 0; led <= __max_led; led++)
     {
-      set_led_hue (led, (unsigned int) (led * width + shift));
+      set_led_hue (led, (uint16_t) (led * width + shift));
     }
   shift++;
 }
@@ -685,7 +685,7 @@ set_all_rgb (uint8_t red, uint8_t green, uint8_t blue)
 }
 
 void
-set_all_hue (unsigned int hue)
+set_all_hue (uint16_t hue)
 {
   uint8_t ctr1;
   for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
@@ -695,22 +695,22 @@ set_all_hue (unsigned int hue)
 }
 
 void
-set_led_hue (uint8_t led, unsigned int hue)
+set_led_hue (uint8_t led, uint16_t hue)
 {
 
-  /* finally thrown out all of the float stuff and replaced with unsigned int */
+  /* finally thrown out all of the float stuff and replaced with uint16_t */
 
   hue = hue % 360;
   uint8_t sector = hue / 60;
   uint8_t rel_pos = hue - (hue / 60) * 60;
-  unsigned int modulation_depth = 0xFFFF;
-  unsigned int slope = modulation_depth / 120;	/* 2*60 */
-  unsigned int a = slope * rel_pos;
-  unsigned int b = slope * rel_pos + modulation_depth / 2;
-  unsigned int c = modulation_depth - slope * rel_pos;
-  unsigned int d = modulation_depth / 2 - slope * rel_pos;
+  uint16_t modulation_depth = 0xFFFF;
+  uint16_t slope = modulation_depth / 120;	/* 2*60 */
+  uint16_t a = slope * rel_pos;
+  uint16_t b = slope * rel_pos + modulation_depth / 2;
+  uint16_t c = modulation_depth - slope * rel_pos;
+  uint16_t d = modulation_depth / 2 - slope * rel_pos;
 
-  unsigned int R, G, B;
+  uint16_t R, G, B;
 
   if (sector == 0)
     {
@@ -749,7 +749,7 @@ set_led_hue (uint8_t led, unsigned int hue)
       B = d;
     }
 
-  unsigned int scale_factor = modulation_depth / __max_brightness;
+  uint16_t scale_factor = modulation_depth / __max_brightness;
 
   R = (uint8_t) (R / scale_factor);
   G = (uint8_t) (G / scale_factor);
@@ -759,7 +759,7 @@ set_led_hue (uint8_t led, unsigned int hue)
 }
 
 void
-set_all_byte_hue (uint8_t data_byte, unsigned int hue)
+set_all_byte_hue (uint8_t data_byte, uint16_t hue)
 {
   uint8_t led;
   for (led = 0; led <= __max_led; led++)
@@ -862,7 +862,7 @@ ISR (TIMER1_OVF_vect)
 
 void
 wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
-	uint8_t times, int delay_time)
+	uint8_t times, uint16_t delay_time)
 {
   uint8_t ctr;
   color_on (led_color);
