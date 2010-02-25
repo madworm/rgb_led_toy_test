@@ -829,8 +829,7 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
   uint16_t const mmd = 255 * 255;	/* maximum modulation depth */
   uint16_t top = val * 255;
   uint16_t bottom = val * (255 - sat);	/* (val*255) - (val*255)*(sat/255) */
-  uint16_t mod_depth = val * sat;
-  uint16_t slope = mod_depth / 120;	/* dy/dx = (top-bottom)/(2*60) */
+  uint16_t slope = (uint16_t)(val) * (uint16_t)(sat) / 120;	/* dy/dx = (top-bottom)/(2*60) -- val*sat: modulation_depth dy */
   uint16_t a = bottom + slope * rel_pos;
   uint16_t b = bottom + mod_depth / 2 + slope * rel_pos;
   uint16_t c = top - slope * rel_pos;
