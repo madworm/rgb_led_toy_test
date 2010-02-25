@@ -114,9 +114,6 @@ setup (void)
   randomSeed (555);
   setup_timer1_ovf ();		/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
   set_all_rgb (0, 0, 0);	/* set the display to BLACK. Only affects PWM mode */
-
-  Serial.begin (57600);
-  Serial.println ("start");
 }
 
 void
@@ -159,13 +156,11 @@ loop (void)
     {
       fader_hue ();
     }
-  for (ctr = 0; ctr < 1000; ctr++)
+  for (ctr = 0; ctr < 3000; ctr++)
     {
-      color_wave (30);
+      color_wave (45);
     }
   disable_timer1_ovf ();	// end PWM mode
-
-  return;
 
   sync (4 * __sync_delay);
   blink_all_red_times (10, 20);
@@ -553,7 +548,7 @@ color_off (enum COLOR_t led_color)
 void
 random_leds (void)
 {
-  set_led_hue ((uint8_t) (random (__leds)), (uint16_t) (random (360)));
+  set_led_hsv ((uint8_t) (random (__leds)), (uint16_t) (random (360)), 255, 255);
 }
 
 void
@@ -587,7 +582,7 @@ fader_hue (void)
   uint16_t ctr1;
   for (ctr1 = 0; ctr1 < 360; ctr1 = ctr1 + 3)
     {
-      set_all_hue (ctr1);
+      set_all_hsv (ctr1, 255, 255);
       delay (__fade_delay);
     }
 }
@@ -599,8 +594,7 @@ color_wave (uint8_t width)
   static uint16_t shift = 0;
   for (led = 0; led <= __max_led; led++)
     {
-      set_led_hue (led, (uint16_t) (led * width + shift));
-      //set_led_hsv (led, (uint16_t) (led * width + shift), 255, 255);
+      set_led_hsv (led, (uint16_t)(led) * (uint16_t)(width) + shift, 255, 255);
     }
   shift++;
 }
@@ -694,119 +688,30 @@ set_all_rgb (uint8_t red, uint8_t green, uint8_t blue)
 }
 
 void
-set_all_hue (uint16_t hue)
+set_all_hsv (uint16_t hue, uint8_t sat, uint8_t val)
 {
   uint8_t ctr1;
   for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
     {
-      set_led_hue (ctr1, hue);
-      //set_led_hsv (ctr1, hue, 255, 255);
+      set_led_hsv (ctr1, hue, sat, val);
     }
 }
 
 void
-set_all_byte_hue (uint8_t data_byte, uint16_t hue)
+set_all_byte_hsv (uint8_t data_byte, uint16_t hue, uint8_t sat, uint8_t val)
 {
   uint8_t led;
   for (led = 0; led <= __max_led; led++)
     {
       if ((data_byte >> led) & (B00000001))
 	{
-	  set_led_hue (led, hue);
+	  set_led_hsv (led, hue, sat, val);
 	}
       else
 	{
 	  set_led_rgb (led, 0, 0, 0);
 	}
     }
-}
-
-void
-set_led_hue (uint8_t led, uint16_t hue)
-{
-  /* finally thrown out all of the float stuff and replaced with uint16_t */
-
-  hue = hue % 360;
-  uint8_t sector = hue / 60;
-  uint8_t rel_pos = hue - (sector * 60);
-  uint16_t const modulation_depth = 0xFFFF;
-  uint16_t const slope = modulation_depth / 120;	/* 2*60 */
-  uint16_t a = slope * rel_pos;
-  uint16_t b = slope * rel_pos + modulation_depth / 2;
-  uint16_t c = modulation_depth - slope * rel_pos;
-  uint16_t d = modulation_depth / 2 - slope * rel_pos;
-
-  Serial.print ("hue: ");
-  Serial.println (hue, DEC);
-  Serial.print ("sat: ");
-  Serial.println ("nix");
-  Serial.print ("val: ");
-  Serial.println ("nix");
-  Serial.print ("sector: ");
-  Serial.println (sector, DEC);
-  Serial.print ("rel_pos: ");
-  Serial.println (rel_pos, DEC);
-  Serial.print ("top: ");
-  Serial.println ("nix");
-  Serial.print ("bottom: ");
-  Serial.println ("nix");
-  Serial.print ("slope: ");
-  Serial.println (slope, DEC);
-  Serial.print ("a: ");
-  Serial.println (a, DEC);
-  Serial.print ("b: ");
-  Serial.println (b, DEC);
-  Serial.print ("c: ");
-  Serial.println (c, DEC);
-  Serial.print ("d: ");
-  Serial.println (d, DEC);
-
-  uint16_t R, G, B;
-
-  if (sector == 0)
-    {
-      R = c;
-      G = a;
-      B = 0;
-    }
-  else if (sector == 1)
-    {
-      R = d;
-      G = b;
-      B = 0;
-    }
-  else if (sector == 2)
-    {
-      R = 0;
-      G = c;
-      B = a;
-    }
-  else if (sector == 3)
-    {
-      R = 0;
-      G = d;
-      B = b;
-    }
-  else if (sector == 4)
-    {
-      R = a;
-      G = 0;
-      B = c;
-    }
-  else
-    {
-      R = b;
-      G = 0;
-      B = d;
-    }
-
-  uint16_t const scale_factor = modulation_depth / __max_brightness;
-
-  R = (uint8_t) (R / scale_factor);
-  G = (uint8_t) (G / scale_factor);
-  B = (uint8_t) (B / scale_factor);
-
-  set_led_rgb (led, R, G, B);
 }
 
 void
@@ -831,34 +736,9 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
   uint16_t bottom = val * (255 - sat);	/* (val*255) - (val*255)*(sat/255) */
   uint16_t slope = (uint16_t)(val) * (uint16_t)(sat) / 120;	/* dy/dx = (top-bottom)/(2*60) -- val*sat: modulation_depth dy */
   uint16_t a = bottom + slope * rel_pos;
-  uint16_t b = bottom + mod_depth / 2 + slope * rel_pos;
+  uint16_t b = bottom + (uint16_t)(val) * (uint16_t)(sat) / 2 + slope * rel_pos;
   uint16_t c = top - slope * rel_pos;
-  uint16_t d = top - mod_depth / 2 - slope * rel_pos;
-
-  Serial.print ("hue: ");
-  Serial.println (hue, DEC);
-  Serial.print ("sat: ");
-  Serial.println (sat, DEC);
-  Serial.print ("val: ");
-  Serial.println (val, DEC);
-  Serial.print ("sector: ");
-  Serial.println (sector, DEC);
-  Serial.print ("rel_pos: ");
-  Serial.println (rel_pos, DEC);
-  Serial.print ("top: ");
-  Serial.println (top, DEC);
-  Serial.print ("bottom: ");
-  Serial.println (bottom, DEC);
-  Serial.print ("slope: ");
-  Serial.println (slope, DEC);
-  Serial.print ("a: ");
-  Serial.println (a, DEC);
-  Serial.print ("b: ");
-  Serial.println (b, DEC);
-  Serial.print ("c: ");
-  Serial.println (c, DEC);
-  Serial.print ("d: ");
-  Serial.println (d, DEC);
+  uint16_t d = top - (uint16_t)(val) * (uint16_t)(sat) / 2 - slope * rel_pos;
 
   uint16_t R, G, B;
 
@@ -866,36 +746,36 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
     {
       R = c;
       G = a;
-      B = 0;
+      B = bottom;
     }
   else if (sector == 1)
     {
       R = d;
       G = b;
-      B = 0;
+      B = bottom;
     }
   else if (sector == 2)
     {
-      R = 0;
+      R = bottom;
       G = c;
       B = a;
     }
   else if (sector == 3)
     {
-      R = 0;
+      R = bottom;
       G = d;
       B = b;
     }
   else if (sector == 4)
     {
       R = a;
-      G = 0;
+      G = bottom;
       B = c;
     }
   else
     {
       R = b;
-      G = 0;
+      G = bottom;
       B = d;
     }
 
@@ -1051,4 +931,71 @@ wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
       break;
     }
   color_off (led_color);
+}
+
+void
+set_led_hue (uint8_t led, uint16_t hue)
+{
+  /* don't use this function */
+  return;
+  /* don't use this function */
+  
+  /* finally thrown out all of the float stuff and replaced with uint16_t */
+
+  hue = hue % 360;
+  uint8_t sector = hue / 60;
+  uint8_t rel_pos = hue - (sector * 60);
+  uint16_t const modulation_depth = 0xFFFF;
+  uint16_t const slope = modulation_depth / 120;	/* 2*60 */
+  uint16_t a = slope * rel_pos;
+  uint16_t b = slope * rel_pos + modulation_depth / 2;
+  uint16_t c = modulation_depth - slope * rel_pos;
+  uint16_t d = modulation_depth / 2 - slope * rel_pos;
+
+  uint16_t R, G, B;
+
+  if (sector == 0)
+    {
+      R = c;
+      G = a;
+      B = 0;
+    }
+  else if (sector == 1)
+    {
+      R = d;
+      G = b;
+      B = 0;
+    }
+  else if (sector == 2)
+    {
+      R = 0;
+      G = c;
+      B = a;
+    }
+  else if (sector == 3)
+    {
+      R = 0;
+      G = d;
+      B = b;
+    }
+  else if (sector == 4)
+    {
+      R = a;
+      G = 0;
+      B = c;
+    }
+  else
+    {
+      R = b;
+      G = 0;
+      B = d;
+    }
+
+  uint16_t const scale_factor = modulation_depth / __max_brightness;
+
+  R = (uint8_t) (R / scale_factor);
+  G = (uint8_t) (G / scale_factor);
+  B = (uint8_t) (B / scale_factor);
+
+  set_led_rgb (led, R, G, B);
 }
