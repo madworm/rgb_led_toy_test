@@ -702,7 +702,7 @@ set_led_hue (uint8_t led, uint16_t hue)
 
   hue = hue % 360;
   uint8_t sector = hue / 60;
-  uint8_t rel_pos = hue - (hue / 60) * 60;
+  uint8_t rel_pos = hue - (sector * 60);
   uint16_t modulation_depth = 0xFFFF;
   uint16_t slope = modulation_depth / 120;	/* 2*60 */
   uint16_t a = slope * rel_pos;
