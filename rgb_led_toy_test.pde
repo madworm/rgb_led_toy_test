@@ -50,7 +50,7 @@
 
 /*
  * Select which board revision you have: OLD_PCB (10138), NEW_PCB (with DTR or >= 1.21)
- */ 
+ */
 
 #define NEW_PCB
 //#define OLD_PCB
@@ -77,7 +77,7 @@
 #include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
 
-uint8_t brightness_red[__leds];	        /* memory for RED LEDs */
+uint8_t brightness_red[__leds];	/* memory for RED LEDs */
 uint8_t brightness_green[__leds];	/* memory for GREEN LEDs */
 uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
 
@@ -86,6 +86,7 @@ uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
 const int8_t PROGMEM dotcorr_red[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 const int8_t PROGMEM dotcorr_green[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 const int8_t PROGMEM dotcorr_blue[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
 #define __fade_delay 5
 #else
 #define __fade_delay 5
@@ -93,11 +94,11 @@ const int8_t PROGMEM dotcorr_blue[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
 #ifdef NEW_PCB
-uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 }; // up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
+uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };	// up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
 #endif
 
 #ifdef OLD_PCB
-uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 }; // this is necessary for older revisions (without DTR or >= 1.21 printed on the PCB)
+uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// this is necessary for older revisions (without DTR or >= 1.21 printed on the PCB)
 #endif
 
 
@@ -113,9 +114,9 @@ setup (void)
   randomSeed (555);
   setup_timer1_ovf ();		/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
   set_all_rgb (0, 0, 0);	/* set the display to BLACK. Only affects PWM mode */
-  
-  Serial.begin(57600);
-  Serial.println("start");
+
+  Serial.begin (57600);
+  Serial.println ("start");
 }
 
 void
@@ -136,14 +137,16 @@ loop (void)
 
 #ifdef DEBUG_BLINK
   color_on (WHITE);
-  while(1) {
-    uint8_t ctr;
-    for (ctr=0; ctr<=7; ctr++) {
-      PORTB = 0xFF;
-      PORTB &= ~(1 << fix_led_numbering[ctr]);
-      __delay_ms (1000);
-    } 
-  }
+  while (1)
+    {
+      uint8_t ctr;
+      for (ctr = 0; ctr <= 7; ctr++)
+	{
+	  PORTB = 0xFF;
+	  PORTB &= ~(1 << fix_led_numbering[ctr]);
+	  __delay_ms (1000);
+	}
+    }
 #endif
 
   enable_timer1_ovf ();		// start PWM mode
@@ -727,36 +730,36 @@ set_led_hue (uint8_t led, uint16_t hue)
   uint8_t sector = hue / 60;
   uint8_t rel_pos = hue - (sector * 60);
   uint16_t const modulation_depth = 0xFFFF;
-  uint16_t const slope = modulation_depth / 120; /* 2*60 */
+  uint16_t const slope = modulation_depth / 120;	/* 2*60 */
   uint16_t a = slope * rel_pos;
   uint16_t b = slope * rel_pos + modulation_depth / 2;
   uint16_t c = modulation_depth - slope * rel_pos;
   uint16_t d = modulation_depth / 2 - slope * rel_pos;
 
-  Serial.print("hue: ");
-  Serial.println(hue,DEC);
-  Serial.print("sat: ");
-  Serial.println("nix");
-  Serial.print("val: ");
-  Serial.println("nix");
-  Serial.print("sector: ");
-  Serial.println(sector,DEC);
-  Serial.print("rel_pos: ");
-  Serial.println(rel_pos,DEC);
-  Serial.print("top: ");
-  Serial.println("nix");
-  Serial.print("bottom: ");
-  Serial.println("nix");
-  Serial.print("slope: ");
-  Serial.println(slope,DEC);
-  Serial.print("a: ");
-  Serial.println(a,DEC);
-  Serial.print("b: ");
-  Serial.println(b,DEC);
-  Serial.print("c: ");
-  Serial.println(c,DEC);
-  Serial.print("d: ");
-  Serial.println(d,DEC);
+  Serial.print ("hue: ");
+  Serial.println (hue, DEC);
+  Serial.print ("sat: ");
+  Serial.println ("nix");
+  Serial.print ("val: ");
+  Serial.println ("nix");
+  Serial.print ("sector: ");
+  Serial.println (sector, DEC);
+  Serial.print ("rel_pos: ");
+  Serial.println (rel_pos, DEC);
+  Serial.print ("top: ");
+  Serial.println ("nix");
+  Serial.print ("bottom: ");
+  Serial.println ("nix");
+  Serial.print ("slope: ");
+  Serial.println (slope, DEC);
+  Serial.print ("a: ");
+  Serial.println (a, DEC);
+  Serial.print ("b: ");
+  Serial.println (b, DEC);
+  Serial.print ("c: ");
+  Serial.println (c, DEC);
+  Serial.print ("d: ");
+  Serial.println (d, DEC);
 
   uint16_t R, G, B;
 
@@ -811,7 +814,7 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
 {
 
   /* BETA */
-  
+
   /* finally thrown out all of the float stuff and replaced with uint16_t
    *
    * hue: 0-->360 (hue, color)
@@ -822,41 +825,41 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
 
   hue = hue % 360;
   uint8_t sector = hue / 60;
-  uint8_t rel_pos = hue - (sector*60);
-  uint16_t const mmd = 255*255; /* maximum modulation depth */
-  uint16_t top = val*255;
-  uint16_t bottom = val*(255-sat); /* (val*255) - (val*255)*(sat/255) */
-  uint16_t mod_depth = val*sat;
-  uint16_t slope = mod_depth/120; /* dy/dx = (top-bottom)/(2*60) */
-  uint16_t a = bottom + slope*rel_pos;
-  uint16_t b = bottom + mod_depth/2 + slope*rel_pos;
-  uint16_t c = top - slope*rel_pos;
-  uint16_t d = top - mod_depth/2 - slope*rel_pos;
-  
-  Serial.print("hue: ");
-  Serial.println(hue,DEC);
-  Serial.print("sat: ");
-  Serial.println(sat,DEC);
-  Serial.print("val: ");
-  Serial.println(val,DEC);
-  Serial.print("sector: ");
-  Serial.println(sector,DEC);
-  Serial.print("rel_pos: ");
-  Serial.println(rel_pos,DEC);
-  Serial.print("top: ");
-  Serial.println(top,DEC);
-  Serial.print("bottom: ");
-  Serial.println(bottom,DEC);
-  Serial.print("slope: ");
-  Serial.println(slope,DEC);
-  Serial.print("a: ");
-  Serial.println(a,DEC);
-  Serial.print("b: ");
-  Serial.println(b,DEC);
-  Serial.print("c: ");
-  Serial.println(c,DEC);
-  Serial.print("d: ");
-  Serial.println(d,DEC);
+  uint8_t rel_pos = hue - (sector * 60);
+  uint16_t const mmd = 255 * 255;	/* maximum modulation depth */
+  uint16_t top = val * 255;
+  uint16_t bottom = val * (255 - sat);	/* (val*255) - (val*255)*(sat/255) */
+  uint16_t mod_depth = val * sat;
+  uint16_t slope = mod_depth / 120;	/* dy/dx = (top-bottom)/(2*60) */
+  uint16_t a = bottom + slope * rel_pos;
+  uint16_t b = bottom + mod_depth / 2 + slope * rel_pos;
+  uint16_t c = top - slope * rel_pos;
+  uint16_t d = top - mod_depth / 2 - slope * rel_pos;
+
+  Serial.print ("hue: ");
+  Serial.println (hue, DEC);
+  Serial.print ("sat: ");
+  Serial.println (sat, DEC);
+  Serial.print ("val: ");
+  Serial.println (val, DEC);
+  Serial.print ("sector: ");
+  Serial.println (sector, DEC);
+  Serial.print ("rel_pos: ");
+  Serial.println (rel_pos, DEC);
+  Serial.print ("top: ");
+  Serial.println (top, DEC);
+  Serial.print ("bottom: ");
+  Serial.println (bottom, DEC);
+  Serial.print ("slope: ");
+  Serial.println (slope, DEC);
+  Serial.print ("a: ");
+  Serial.println (a, DEC);
+  Serial.print ("b: ");
+  Serial.println (b, DEC);
+  Serial.print ("c: ");
+  Serial.println (c, DEC);
+  Serial.print ("d: ");
+  Serial.println (d, DEC);
 
   uint16_t R, G, B;
 
@@ -998,7 +1001,7 @@ wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
   /* don't use this function */
   return;
   /* don't use this function */
-  
+
   uint8_t ctr;
   color_on (led_color);
   switch (direction)
@@ -1050,4 +1053,3 @@ wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
     }
   color_off (led_color);
 }
-
