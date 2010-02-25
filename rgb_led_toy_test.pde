@@ -77,7 +77,7 @@
 #include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
 
-uint8_t brightness_red[__leds];	/* memory for RED LEDs */
+uint8_t brightness_red[__leds];	        /* memory for RED LEDs */
 uint8_t brightness_green[__leds];	/* memory for GREEN LEDs */
 uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
 
@@ -113,6 +113,9 @@ setup (void)
   randomSeed (555);
   setup_timer1_ovf ();		/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
   set_all_rgb (0, 0, 0);	/* set the display to BLACK. Only affects PWM mode */
+  
+  Serial.begin(57600);
+  Serial.println("start");
 }
 
 void
@@ -158,6 +161,8 @@ loop (void)
       color_wave (30);
     }
   disable_timer1_ovf ();	// end PWM mode
+
+  return;
 
   sync (4 * __sync_delay);
   blink_all_red_times (10, 20);
@@ -592,6 +597,7 @@ color_wave (uint8_t width)
   for (led = 0; led <= __max_led; led++)
     {
       set_led_hue (led, (uint16_t) (led * width + shift));
+      //set_led_hsv (led, (uint16_t) (led * width + shift), 255, 255);
     }
   shift++;
 }
@@ -691,24 +697,66 @@ set_all_hue (uint16_t hue)
   for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
     {
       set_led_hue (ctr1, hue);
+      //set_led_hsv (ctr1, hue, 255, 255);
+    }
+}
+
+void
+set_all_byte_hue (uint8_t data_byte, uint16_t hue)
+{
+  uint8_t led;
+  for (led = 0; led <= __max_led; led++)
+    {
+      if ((data_byte >> led) & (B00000001))
+	{
+	  set_led_hue (led, hue);
+	}
+      else
+	{
+	  set_led_rgb (led, 0, 0, 0);
+	}
     }
 }
 
 void
 set_led_hue (uint8_t led, uint16_t hue)
 {
-
   /* finally thrown out all of the float stuff and replaced with uint16_t */
 
   hue = hue % 360;
   uint8_t sector = hue / 60;
   uint8_t rel_pos = hue - (sector * 60);
-  uint16_t modulation_depth = 0xFFFF;
-  uint16_t slope = modulation_depth / 120;	/* 2*60 */
+  uint16_t const modulation_depth = 0xFFFF;
+  uint16_t const slope = modulation_depth / 120; /* 2*60 */
   uint16_t a = slope * rel_pos;
   uint16_t b = slope * rel_pos + modulation_depth / 2;
   uint16_t c = modulation_depth - slope * rel_pos;
   uint16_t d = modulation_depth / 2 - slope * rel_pos;
+
+  Serial.print("hue: ");
+  Serial.println(hue,DEC);
+  Serial.print("sat: ");
+  Serial.println("nix");
+  Serial.print("val: ");
+  Serial.println("nix");
+  Serial.print("sector: ");
+  Serial.println(sector,DEC);
+  Serial.print("rel_pos: ");
+  Serial.println(rel_pos,DEC);
+  Serial.print("top: ");
+  Serial.println("nix");
+  Serial.print("bottom: ");
+  Serial.println("nix");
+  Serial.print("slope: ");
+  Serial.println(slope,DEC);
+  Serial.print("a: ");
+  Serial.println(a,DEC);
+  Serial.print("b: ");
+  Serial.println(b,DEC);
+  Serial.print("c: ");
+  Serial.println(c,DEC);
+  Serial.print("d: ");
+  Serial.println(d,DEC);
 
   uint16_t R, G, B;
 
@@ -749,7 +797,7 @@ set_led_hue (uint8_t led, uint16_t hue)
       B = d;
     }
 
-  uint16_t scale_factor = modulation_depth / __max_brightness;
+  uint16_t const scale_factor = modulation_depth / __max_brightness;
 
   R = (uint8_t) (R / scale_factor);
   G = (uint8_t) (G / scale_factor);
@@ -759,20 +807,103 @@ set_led_hue (uint8_t led, uint16_t hue)
 }
 
 void
-set_all_byte_hue (uint8_t data_byte, uint16_t hue)
+set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
 {
-  uint8_t led;
-  for (led = 0; led <= __max_led; led++)
+
+  /* BETA */
+  
+  /* finally thrown out all of the float stuff and replaced with uint16_t
+   *
+   * hue: 0-->360 (hue, color)
+   * sat: 0-->255 (saturation)
+   * val: 0-->255 (value, brightness)
+   *
+   */
+
+  hue = hue % 360;
+  uint8_t sector = hue / 60;
+  uint8_t rel_pos = hue - (sector*60);
+  uint16_t const mmd = 255*255; /* maximum modulation depth */
+  uint16_t top = val*255;
+  uint16_t bottom = val*(255-sat); /* (val*255) - (val*255)*(sat/255) */
+  uint16_t mod_depth = val*sat;
+  uint16_t slope = mod_depth/120; /* dy/dx = (top-bottom)/(2*60) */
+  uint16_t a = bottom + slope*rel_pos;
+  uint16_t b = bottom + mod_depth/2 + slope*rel_pos;
+  uint16_t c = top - slope*rel_pos;
+  uint16_t d = top - mod_depth/2 - slope*rel_pos;
+  
+  Serial.print("hue: ");
+  Serial.println(hue,DEC);
+  Serial.print("sat: ");
+  Serial.println(sat,DEC);
+  Serial.print("val: ");
+  Serial.println(val,DEC);
+  Serial.print("sector: ");
+  Serial.println(sector,DEC);
+  Serial.print("rel_pos: ");
+  Serial.println(rel_pos,DEC);
+  Serial.print("top: ");
+  Serial.println(top,DEC);
+  Serial.print("bottom: ");
+  Serial.println(bottom,DEC);
+  Serial.print("slope: ");
+  Serial.println(slope,DEC);
+  Serial.print("a: ");
+  Serial.println(a,DEC);
+  Serial.print("b: ");
+  Serial.println(b,DEC);
+  Serial.print("c: ");
+  Serial.println(c,DEC);
+  Serial.print("d: ");
+  Serial.println(d,DEC);
+
+  uint16_t R, G, B;
+
+  if (sector == 0)
     {
-      if ((data_byte >> led) & (B00000001))
-	{
-	  set_led_hue (led, hue);
-	}
-      else
-	{
-	  set_led_rgb (led, 0, 0, 0);
-	}
+      R = c;
+      G = a;
+      B = 0;
     }
+  else if (sector == 1)
+    {
+      R = d;
+      G = b;
+      B = 0;
+    }
+  else if (sector == 2)
+    {
+      R = 0;
+      G = c;
+      B = a;
+    }
+  else if (sector == 3)
+    {
+      R = 0;
+      G = d;
+      B = b;
+    }
+  else if (sector == 4)
+    {
+      R = a;
+      G = 0;
+      B = c;
+    }
+  else
+    {
+      R = b;
+      G = 0;
+      B = d;
+    }
+
+  uint16_t scale_factor = mmd / __max_brightness;
+
+  R = (uint8_t) (R / scale_factor);
+  G = (uint8_t) (G / scale_factor);
+  B = (uint8_t) (B / scale_factor);
+
+  set_led_rgb (led, R, G, B);
 }
 
 
@@ -864,6 +995,10 @@ void
 wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
 	uint8_t times, uint16_t delay_time)
 {
+  /* don't use this function */
+  return;
+  /* don't use this function */
+  
   uint8_t ctr;
   color_on (led_color);
   switch (direction)
@@ -915,3 +1050,4 @@ wobble (enum COLOR_t led_color, enum DIRECTION_t direction,
     }
   color_off (led_color);
 }
+
