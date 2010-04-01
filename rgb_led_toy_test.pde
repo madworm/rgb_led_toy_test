@@ -18,11 +18,16 @@
 /*
  * For boards that support auto-reset (version >= 1.21 or DTR printed on PCB): 
  *
+ * ! DO NOT USE THE ARDUINO IDE FOR BURNING THE BOOTLOADER
+ * ! IT WILL USE THE WRONG FUSE SETTINGS AND BRICK THE BOARD
+ *
  * If you use an Arduino bootloader, I recommend the "ATmegaBOOT_168_pro_8MHz.hex".
- * Set the FUSE bytes to: LFUSE:0xE2 - HFUSE:0xDD - EFUSE:0x00 (avrdude convention)
+ *
+ * avrdude -c usbtiny -p atmega168 -P usb -b 115200 -e -u -U lock:w:0x3f:m -U efuse:w:0x00:m -U hfuse:w:0xDD:m -U lfuse:w:0xE2:m
+ * avrdude -c usbtiny -p atmega168 -B 10 -P usb -b 115200 -U flash:w:ATmegaBOOT_168_pro_8MHz.hex -U lock:w:0x0f:m
  *
  *
- * For all other boards:
+ * For all other/beta/old boards:
  *
  * If you use an Arduino bootloader, I recommend the "LilyPadBOOT_168.hex".
  * Set the FUSE bytes to: LFUSE:0xE2 - HFUSE:0xDD - EFUSE:0x00 (avrdude convention)
