@@ -64,10 +64,23 @@ enum DIRECTION_t
 #define LED6 PB6
 #define LED7 PB7
 
+#ifdef NEW_PCB_yellow // new LEDs from JELEDHK (ebay). Cheaper, but reversed chips in the PLCC6-5050 package --> LEDs rotated by 180° 
+#define RED_A PD6
+#define GREEN_A PD5
+#define BLUE_A PD7
+#endif
+
+#ifdef NEW_PCB_green
 #define RED_A PD5
 #define GREEN_A PD6
 #define BLUE_A PD7
+#endif
 
+#ifdef OLD_PCB
+#define RED_A PD5
+#define GREEN_A PD6
+#define BLUE_A PD7
+#endif
 
 /*
  * wobble patterns

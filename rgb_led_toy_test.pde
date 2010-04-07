@@ -54,10 +54,13 @@
 
 
 /*
- * Select which board revision you have: OLD_PCB (10138), NEW_PCB (with DTR or >= 1.21)
+ * Select which board revision you have: OLD_PCB (10138), NEW_PCB_green (with DTR or V1.21), 
+ * NEW_PCB_yellow (V1.21) and different RGB LEDs with the polarity mark facing towards the ATmega chip.
+ * The silkscreen shows the little notches facing outward, which is now wrong for the new LEDs!
  */
 
-#define NEW_PCB
+#define NEW_PCB_yellow
+//#define NEW_PCB_green
 //#define OLD_PCB
 
 
@@ -98,7 +101,11 @@ const int8_t PROGMEM dotcorr_blue[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 #endif
 
 
-#ifdef NEW_PCB
+#ifdef NEW_PCB_yellow
+uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };	// up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
+#endif
+
+#ifdef NEW_PCB_green
 uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };	// up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
 #endif
 
