@@ -1,5 +1,5 @@
 /*
- * 2010-02-25 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
+ * 2010-05-04 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
 
 /*
@@ -64,7 +64,7 @@
 //#define OLD_PCB
 
 
-//#define DOTCORR  /* enable/disable dot correction */
+#define DOTCORR  /* enable/disable dot correction - only valid for PWM mode ! */
 
 
 #define __leds 8
@@ -89,10 +89,9 @@ uint8_t brightness_red[__leds];	/* memory for RED LEDs */
 uint8_t brightness_green[__leds];	/* memory for GREEN LEDs */
 uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
 
-
 #ifdef DOTCORR
 const int8_t PROGMEM dotcorr_red[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-const int8_t PROGMEM dotcorr_green[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+const int8_t PROGMEM dotcorr_green[__leds] = { -15, -15, -15, -15, -15, -15, -15, -15 };
 const int8_t PROGMEM dotcorr_blue[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define __fade_delay 5
@@ -859,17 +858,17 @@ ISR (TIMER1_OVF_vect)
 
 	  if (cycle < brightness_red[led])
 	    {
-	      PORTD |= (1 << PD5);
+	      PORTD |= (1 << RED_A);
 	    }
 
 	  if (cycle < brightness_green[led])
 	    {
-	      PORTD |= (1 << PD6);
+	      PORTD |= (1 << GREEN_A);
 	    }
 
 	  if (cycle < brightness_blue[led])
 	    {
-	      PORTD |= (1 << PD7);
+	      PORTD |= (1 << BLUE_A);
 	    }
 	}
     }
