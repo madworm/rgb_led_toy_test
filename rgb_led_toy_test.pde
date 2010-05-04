@@ -64,7 +64,7 @@
 //#define OLD_PCB
 
 
-#define DOTCORR  /* enable/disable dot correction - only valid for PWM mode ! */
+//#define DOTCORR  /* enable/disable dot correction - only valid for PWM mode ! */
 
 
 #define __leds 8
