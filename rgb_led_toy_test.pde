@@ -1,6 +1,16 @@
 /*
- * 2010-05-04 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
+ * 2010-07-26 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
+ 
+ /*
+  * change log:
+  *
+  * 2010-07-26 removed all the OSCCAL code, it just doesn't work good enough (drift).
+  *            Next time I'll use a quartz crystal in SMD format...
+  *            Now the syncing is done manually in functions after each "step" or "time slice",
+  *            but NOT in PWM mode as it gets too slow.
+  *
+  */
 
 /*
  * The boards run with the internal oscillator. To stay in sync the MASTER sends a sync pulse
@@ -63,18 +73,16 @@
 //#define NEW_PCB_green
 //#define OLD_PCB
 
-
 //#define DOTCORR  /* enable/disable dot correction - only valid for PWM mode ! */
-
 
 #define __leds 8
 #define __max_led __leds - 1
 
-#define __brightness_levels 64	// 0...15 above 28 is bad for ISR ( move to timer1, lower irq freq ! )
+#define __brightness_levels 64
 #define __max_brightness __brightness_levels-1
 
 #define __TIMER1_MAX 0xFFFF	// 16 bit CTR
-#define __TIMER1_CNT 0x0030	//
+#define __TIMER1_CNT 0x0030     // this may have to be adjusted if "__brightness_levels" is changed too much
 
 
 #include <util/delay.h>
@@ -131,18 +139,6 @@ void
 loop (void)
 {
 
-/*
- * This block here is contains calibration values for the internal oscillator for boards running with it at about 8MHz. 
- * You need to determine them yourself. The easiest way is to make a LED blink for a well defined time and use an oscilloscope
- * to measure it. Adjust 'OSCCAL' to make the time right. There is some code on my blog to show how it may work for you.
- */
-#define __sync_delay 75		// this really needs to be fixed by a much better oscillator calibration --> new digital scope !
-#ifdef MASTER
-  //OSCCAL = 122;            // MASTER board
-#else
-  //OSCCAL = 104;            // SLAVE board
-#endif
-
 #ifdef DEBUG_BLINK
   color_on (WHITE);
   while (1)
@@ -173,74 +169,55 @@ loop (void)
     }
   disable_timer1_ovf ();	// end PWM mode
 
-  sync (4 * __sync_delay);
+#ifdef MASTER
+  __delay_ms(1000); // wait for the slave to finish after the _un-synced_ PWM demo
+  sync();
   blink_all_red_times (10, 20);
-  sync (__sync_delay);
   blink_all_green_times (10, 20);
-  sync (__sync_delay);
   blink_all_blue_times (10, 20);
-  sync (__sync_delay);
   blink_all_white_times (10, 20);
 
-#ifdef MASTER
-  sync (__sync_delay);
   wobble2 (wobble_pattern_1, 8, RED, CW, 10, 80);
-  sync (__sync_delay);
   wobble2 (wobble_pattern_3, 8, YELLOW, CW, 10, 80);
-  sync (__sync_delay);
   white_clockwise (10, 20);
-  sync (__sync_delay);
   white_counterclockwise (10, 20);
-  sync (__sync_delay);
   rotating_bar (BLUE, CCW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (GREEN, CW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (RED, CCW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (YELLOW, CW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (TURQUOISE, CCW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (PURPLE, CW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (WHITE, CCW, 15, 75);
 #endif
 
 #ifdef SLAVE
-  sync (__sync_delay);
+  sync();
+  blink_all_red_times (10, 20);
+  blink_all_green_times (10, 20);
+  blink_all_blue_times (10, 20);
+  blink_all_white_times (10, 20);
+
   wobble2 (wobble_pattern_1, 8, RED, CCW, 10, 80);
-  sync (__sync_delay);
-  wobble2 (wobble_pattern_3, 8, YELLOW, CCW, 10, 80);
-  sync (__sync_delay);
+  wobble2 (wobble_pattern_3, 8, YELLOW, CW, 10, 80);
   white_counterclockwise (10, 20);
-  sync (__sync_delay);
   white_clockwise (10, 20);
-  sync (__sync_delay);
   rotating_bar (BLUE, CW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (GREEN, CCW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (RED, CW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (YELLOW, CCW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (TURQUOISE, CW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (PURPLE, CCW, 15, 75);
-  sync (__sync_delay);
   rotating_bar (WHITE, CW, 15, 75);
 #endif
 }
 
 void
-sync (uint8_t sync_delay)
+sync (void)
 {
 #ifdef MASTER
-  __delay_ms (sync_delay);
   DDRC |= ((1 << PC4));		// PC4 is an output
   PORTC &= ~((1 << PC4));	// set PC4 low
-  __delay_ms (1);
+  __delay_ms(1);
   PORTC |= ((1 << PC4));	// set PC4 high
   DDRC &= ~((1 << PC4));	// PC4 is an input
   PORTC |= ((1 << PC4));	// internal pull-up on
@@ -250,7 +227,6 @@ sync (uint8_t sync_delay)
   while ((PINC & (1 << PC4)))
     {
     };				// wait for sync pulse (low) from master
-  __delay_ms (1);
 #endif
 }
 
@@ -272,7 +248,13 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
 	      PORTB &=
 		~((1 << fix_led_numbering[ctr1]) |
 		  (1 << fix_led_numbering[(ctr1 + 4)]));
-	      __delay_ms (delay_time);
+#ifdef MASTER
+              __delay_ms (delay_time);
+              sync();
+#else
+              sync();
+              __delay_ms (delay_time);
+#endif
 	    }
 	}
       break;
@@ -285,7 +267,13 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction,
 	      PORTB &=
 		~((1 << fix_led_numbering[ctr1]) |
 		  (1 << fix_led_numbering[(ctr1 + 4) % 8]));
+#ifdef MASTER
 	      __delay_ms (delay_time);
+              sync();
+#else
+              sync();
+              __delay_ms (delay_time);
+#endif
 	    }
 	}
       break;
@@ -307,7 +295,13 @@ white_clockwise (uint8_t times, uint16_t delay_time)
 	{
 	  PORTB = 0xFF;
 	  PORTB &= ~(1 << fix_led_numbering[ctr1]);
+#ifdef MASTER
 	  __delay_ms (delay_time);
+          sync();
+#else
+          sync();
+          __delay_ms (delay_time);
+#endif
 	}
     }
   color_off (WHITE);
@@ -325,7 +319,13 @@ white_counterclockwise (uint8_t times, uint16_t delay_time)
 	{
 	  PORTB = 0xFF;
 	  PORTB &= ~(1 << fix_led_numbering[ctr1 % 8]);
+#ifdef MASTER
 	  __delay_ms (delay_time);
+          sync();
+#else
+          sync();
+          __delay_ms (delay_time);
+#endif
 	}
     }
   color_off (WHITE);
@@ -339,9 +339,21 @@ blink_all_red_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
       PORTB = 0xFF;		// off
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
     }
   color_off (RED);
 }
@@ -354,9 +366,21 @@ blink_all_green_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
       PORTB = 0xFF;		// off
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
     }
   color_off (GREEN);
 }
@@ -369,9 +393,21 @@ blink_all_blue_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
       PORTB = 0xFF;		// off
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
     }
   color_off (BLUE);
 }
@@ -384,9 +420,21 @@ blink_all_white_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
       PORTB = 0xFF;		// off
+#ifdef MASTER
       __delay_ms (delay_time);
+      sync();
+#else
+      sync();
+      __delay_ms (delay_time);
+#endif
     }
   color_off (WHITE);
 }
@@ -441,7 +489,13 @@ wobble2 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length,
 	  for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
 	    {
 	      set_byte (wobble_pattern_ptr[ctr2]);
+#ifdef MASTER
 	      __delay_ms (delay_time);
+              sync();
+#else
+              sync();
+              __delay_ms (delay_time);
+#endif
 	    }
 	}
       break;
@@ -451,7 +505,13 @@ wobble2 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length,
 	  for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
 	    {
 	      set_byte (rotate_byte (wobble_pattern_ptr[ctr2], 4, CW));
+#ifdef MASTER
 	      __delay_ms (delay_time);
+              sync();
+#else
+              sync();
+              __delay_ms (delay_time);
+#endif
 	    }
 	}
       break;
