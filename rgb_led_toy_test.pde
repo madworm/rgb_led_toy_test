@@ -217,7 +217,7 @@ sync (void)
 #ifdef MASTER
   DDRC |= ((1 << PC4));		// PC4 is an output
   PORTC &= ~((1 << PC4));	// set PC4 low
-  __delay_ms(1);
+  __delay_ms(2);
   PORTC |= ((1 << PC4));	// set PC4 high
   DDRC &= ~((1 << PC4));	// PC4 is an input
   PORTC |= ((1 << PC4));	// internal pull-up on
