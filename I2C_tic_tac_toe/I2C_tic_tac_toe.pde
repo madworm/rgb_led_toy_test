@@ -37,21 +37,24 @@ uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// this is necessary 
 
 const uint8_t anim__twi_targets[9] PROGMEM = {0x10,0x11,0x14,0x18,0x15,0x13,0x12,0x16,0x17}; // the tic-tac-toe sequence is encoded in this
 const COLOR_t anim__colors[9]      PROGMEM = {RED,GREEN,RED,GREEN,RED,GREEN,RED,GREEN,RED}; // colors
-const uint8_t anim__delays[9]      PROGMEM = {100,100,100,100,100,100,100,100,500}; // delays in 10ms after each step
+const uint8_t anim__delays[9]      PROGMEM = {100,100,100,100,100,100,100,100,300}; // delays in ms after each step
 
 #define MASTER_TWI_DUMMY_ADDRESS 0x10 // just so the master board knows which part of the animation takes place using its own LEDS!
-#define __GAME_TIMEOUT 10000 // 20 seconds
-
+#define __GAME_TIMEOUT 1000 // 20 seconds
+#define __DELAY_SCALER 2
 
 void
 setup (void)
 {
+  Wire.begin();  
   DDRB |= ((1 << LED0) | (1 << LED1) | (1 << LED2) | (1 << LED3) | (1 << LED4) | (1 << LED5) | (1 << LED6) | (1 << LED7));	// set PORTB as output
   PORTB = 0xFF;			// all pins HIGH --> cathodes HIGH --> LEDs off
   DDRD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));	// set PORTD #5-7 as output
   PORTD &= ~((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));	// pins #5-7 LOW --> anodes LOW --> LEDs off
   DDRC &= ~((1 << PC2) | (1 << PC3) | (1 << PC4) | (1 << PC5));	// PC2-5 is an input
-  PORTC |= ((1 << PC4));	// internal pull-up on
+  PORTC |= ((1<<PC4) | (1<<PC5)); // internal pullups on for the I2C lines
+  //DDRC |= ((1 << PC2) | (1 << PC3)); // define as outputs. just a hack on the pcb to use 10k pullups for the I2C lines
+  //PORTC |= ((1 << PC2) | (1 << PC3)); // set to high
 }
 
 
@@ -59,8 +62,6 @@ void
 loop (void)
 {
 #ifdef MASTER
-  Wire.begin();
-
   clear_game();
   __delay_ms(500);
 
@@ -82,9 +83,9 @@ loop (void)
       Wire.send(anim__color);
       Wire.endTransmission(); 
     }
-    __delay_ms((uint16_t)(4*anim__delay));
+    __delay_ms((uint16_t)(__DELAY_SCALER*anim__delay));
   }  
-  __delay_ms(__GAME_TIMEOUT/2);
+  __delay_ms(__GAME_TIMEOUT);
 #endif
 
 #ifdef SLAVE
