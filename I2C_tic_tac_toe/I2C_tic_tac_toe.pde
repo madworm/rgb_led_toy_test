@@ -35,13 +35,14 @@ uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// this is necessary 
 #endif
 
 
-const uint8_t anim__twi_targets[9] PROGMEM = {0x10,0x11,0x14,0x18,0x15,0x13,0x12,0x16,0x17}; // the tic-tac-toe sequence is encoded in this
-const COLOR_t anim__colors[9]      PROGMEM = {RED,GREEN,RED,GREEN,RED,GREEN,RED,GREEN,RED}; // colors
-const uint8_t anim__delays[9]      PROGMEM = {100,100,100,100,100,100,100,100,300}; // delays in ms after each step
+#define __GAME_STEPS 45
+const uint8_t anim__twi_targets[__GAME_STEPS] PROGMEM = {0x10,0x11,0x14,0x18,0x15,0x13,0x12,0x16,0x17,   0x10,0x11,0x12,0x13,0x14,0x15,0x16,0x17,0x18,            0x10,0x13,0x14,0x12,0x18,0x11,0x15,0x16,0x17,            0x10,0x14,0x18,0x10,0x14,0x18,0x10,0x14,0x18,             0x10,0x14,0x18,0x10,0x14,0x18,0x10,0x14,0x18}; // the tic-tac-toe sequence is encoded in this
+const COLOR_t anim__colors[__GAME_STEPS]      PROGMEM = {RED,GREEN,RED,GREEN,RED,GREEN,RED,GREEN,RED,    BLACK,BLACK,BLACK,BLACK,BLACK,BLACK,BLACK,BLACK,BLACK,   BLUE,YELLOW,BLUE,YELLOW,BLUE,BLACK,BLACK,BLACK,BLACK,    WHITE,WHITE,WHITE,BLACK,BLACK,BLACK,WHITE,WHITE,WHITE,    WHITE,WHITE,WHITE,BLACK,BLACK,BLACK,WHITE,WHITE,WHITE}; // colors
+const uint8_t anim__delays[__GAME_STEPS]      PROGMEM = {40,40,40,40,40,40,40,40,255,                    0,0,0,0,0,0,0,0,255,                                     40,40,40,40,40,40,40,40,255,                             0,0,10,0,0,10,0,0,10,                                     0,0,10,0,0,10,0,0,100}; // delays in ms after each step
 
 #define MASTER_TWI_DUMMY_ADDRESS 0x10 // just so the master board knows which part of the animation takes place using its own LEDS!
 #define __GAME_TIMEOUT 1000 // 20 seconds
-#define __DELAY_SCALER 2
+#define __DELAY_SCALER 10
 
 void
 setup (void)
@@ -67,7 +68,7 @@ loop (void)
 
   uint8_t counter;
 
-  for(counter = 0; counter <=8; counter++) {
+  for(counter = 0; counter <=__GAME_STEPS; counter++) {
     uint8_t anim__target_addr = pgm_read_byte(&anim__twi_targets[counter]);
     uint8_t anim__color = pgm_read_byte(&anim__colors[counter]);
     uint8_t anim__delay = pgm_read_byte(&anim__delays[counter]);
