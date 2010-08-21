@@ -5,6 +5,8 @@
  /*
   * change log:
   *
+  * 2010-08-21 added true 7 simultaneous color mode. brighter than true RGB mode.
+  *
   * 2010-08-19 added wobble3() for 2 color animations in 'high brightness' mode. kinda works.
   *
   * 2010-07-26 removed all the OSCCAL code, it just doesn't work good enough (drift).
@@ -46,13 +48,11 @@
  *
  */
 
-
 /*
  * Select debugging mode
  */
 
 //#define DEBUG_BLINK
-
 
 /*
  * Select if the board is a MASTER (sends sync pulse), or a slave (waits for sync pulse)
@@ -64,7 +64,6 @@
 #define SLAVE
 #endif
 
-
 /*
  * Select which board revision you have: OLD_PCB (10138), NEW_PCB_green (with DTR or V1.21), 
  * NEW_PCB_yellow (V1.21) and different RGB LEDs with the polarity mark facing towards the ATmega chip.
@@ -75,18 +74,6 @@
 //#define NEW_PCB_green
 //#define OLD_PCB
 
-//#define DOTCORR  /* enable/disable dot correction - only valid for PWM mode ! */
-
-#define __leds 8
-#define __max_led __leds - 1
-
-#define __brightness_levels 64
-#define __max_brightness __brightness_levels-1
-
-#define __TIMER1_MAX 0xFFFF	// 16 bit CTR
-#define __TIMER1_CNT 0x0030	// this may have to be adjusted if "__brightness_levels" is changed too much
-
-
 #include <util/delay.h>
 #include <stdint.h>
 #include <avr/io.h>
@@ -94,21 +81,27 @@
 #include <avr/pgmspace.h>
 #include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
+uint8_t brightness_red[8];	/* memory for RED LEDs */
+uint8_t brightness_green[8];	/* memory for GREEN LEDs */
+uint8_t brightness_blue[8];	/* memory for BLUE LEDs */
 
-uint8_t brightness_red[__leds];	/* memory for RED LEDs */
-uint8_t brightness_green[__leds];	/* memory for GREEN LEDs */
-uint8_t brightness_blue[__leds];	/* memory for BLUE LEDs */
+/* all of the volatile variables will be set in setup_timer1_ovf() */
+volatile uint16_t timer1_cnt;
+volatile uint8_t rgb_mode;	/* 0 for multiplexed TRUE-RGB (dim), 1 for multiplexed 7 color RGB (brighter and just 7 simultaneous colors including white) */
+volatile uint8_t brightness_levels;
+volatile uint8_t max_brightness;
+
+//#define DOTCORR  /* enable/disable dot correction - only valid for true RGB PWM mode ! */
 
 #ifdef DOTCORR
-const int8_t PROGMEM dotcorr_red[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-const int8_t PROGMEM dotcorr_green[__leds] = { -15, -15, -15, -15, -15, -15, -15, -15 };
-const int8_t PROGMEM dotcorr_blue[__leds] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+const int8_t PROGMEM dotcorr_red[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+const int8_t PROGMEM dotcorr_green[8] = { -15, -15, -15, -15, -15, -15, -15, -15 };
+const int8_t PROGMEM dotcorr_blue[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-#define __fade_delay 5
+#define __fade_delay 2
 #else
 #define __fade_delay 5
 #endif
-
 
 #ifdef NEW_PCB_yellow
 uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };	// up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
@@ -133,7 +126,7 @@ setup (void)
   DDRC &= ~((1 << PC2) | (1 << PC3) | (1 << PC4) | (1 << PC5));	// PC2-5 is an input
   PORTC |= ((1 << PC4));	// internal pull-up on
   randomSeed (555);
-  setup_timer1_ovf ();		/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
+  setup_timer1_ovf (0);		/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
   set_all_rgb (0, 0, 0);	/* set the display to BLACK. Only affects PWM mode */
 }
 
@@ -155,24 +148,65 @@ loop (void)
     }
 #endif
 
-  enable_timer1_ovf ();		// start PWM mode
   uint16_t ctr;
-  for (ctr = 0; ctr < 2; ctr++)
-    {
-      fader ();
-    }
-  for (ctr = 0; ctr < 2; ctr++)
-    {
-      fader_hue ();
-    }
-  for (ctr = 0; ctr < 3000; ctr++)
-    {
-      color_wave (45);
-    }
+
+  setup_timer1_ovf (0);		// true RGB PWM mode
+  enable_timer1_ovf ();		// start PWM mode
+  {
+    for (ctr = 0; ctr < 3; ctr++)
+      {
+	fader ();
+      }
+    for (ctr = 0; ctr < 4; ctr++)
+      {
+	fader_hue ();
+      }
+    for (ctr = 0; ctr < 1000; ctr++)
+      {
+	color_wave (45);
+      }
+    for (ctr = 0; ctr < 20; ctr++)
+      {
+	set_all_rgb (255, 255, 255);
+	delay (20);
+	set_all_rgb (0, 0, 0);
+	delay (20);
+      }
+  }
+  disable_timer1_ovf ();	// end PWM mode
+
+  setup_timer1_ovf (1);		// 7 color mode
+  enable_timer1_ovf ();		// start PWM mode
+  {
+    set_led_rgb (0, 1, 0, 0);
+    delay (1000);
+    set_led_rgb (1, 1, 1, 0);
+    delay (1000);
+    set_led_rgb (2, 0, 1, 0);
+    delay (1000);
+    set_led_rgb (3, 0, 1, 1);
+    delay (1000);
+    set_led_rgb (4, 0, 0, 1);
+    delay (1000);
+    set_led_rgb (5, 1, 0, 1);
+    delay (1000);
+    set_led_rgb (6, 1, 1, 1);
+    delay (1000);
+    set_led_rgb (7, 1, 1, 1);
+    delay (5000);
+
+    for (ctr = 0; ctr < 20; ctr++)
+      {
+	set_all_rgb (255, 90, 45);
+	delay (20);
+	set_all_rgb (0, 0, 0);
+	delay (20);
+      }
+  }
   disable_timer1_ovf ();	// end PWM mode
 
 #ifdef MASTER
-  __delay_ms (1000);		// wait for the slave to finish after the _un-synced_ PWM demo
+  __delay_ms (2500);		// wait for the slave to finish after the _un-synced_ PWM demo
   sync ();
 
   blink_all_red_times (10, 20);
@@ -194,7 +228,7 @@ loop (void)
   rotating_bar (PURPLE, CW, 15, 75);
   rotating_bar (WHITE, CCW, 15, 75);
 
-  wobble3 (wobble_pattern_1, 8, RED, GREEN, 10, 50);
+  wobble3 (wobble_pattern_1, 8, RED, GREEN, 10, 50);	// runs unsynced between MASTER and SLAVE !
   wobble3 (wobble_pattern_1, 4, RED, PURPLE, 10, 10);
   wobble3 (wobble_pattern_1, 8, YELLOW, BLUE, 10, 10);
 #endif
@@ -257,7 +291,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
     case CW:
       for (ctr2 = 0; ctr2 < times; ctr2++)
 	{
-	  for (ctr1 = 0; ctr1 <= __max_led - 4; ctr1++)
+	  for (ctr1 = 0; ctr1 <= (8 - 1) - 4; ctr1++)
 	    {
 	      PORTB = 0xFF;
 	      PORTB &= ~((1 << fix_led_numbering[ctr1]) | (1 << fix_led_numbering[(ctr1 + 4)]));
@@ -274,7 +308,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
     case CCW:
       for (ctr2 = 0; ctr2 < times; ctr2++)
 	{
-	  for (ctr1 = __max_led - 4 + 1; ctr1 >= 1; ctr1--)
+	  for (ctr1 = (8 - 1) - 4 + 1; ctr1 >= 1; ctr1--)
 	    {
 	      PORTB = 0xFF;
 	      PORTB &= ~((1 << fix_led_numbering[ctr1]) | (1 << fix_led_numbering[(ctr1 + 4) % 8]));
@@ -302,7 +336,7 @@ white_clockwise (uint8_t times, uint16_t delay_time)
   uint8_t ctr2;
   for (ctr2 = 0; ctr2 < times; ctr2++)
     {
-      for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
+      for (ctr1 = 0; ctr1 <= (8 - 1); ctr1++)
 	{
 	  PORTB = 0xFF;
 	  PORTB &= ~(1 << fix_led_numbering[ctr1]);
@@ -326,7 +360,7 @@ white_counterclockwise (uint8_t times, uint16_t delay_time)
   uint8_t ctr2;
   for (ctr2 = 0; ctr2 < times; ctr2++)
     {
-      for (ctr1 = __max_led + 1; ctr1 >= 1; ctr1--)
+      for (ctr1 = (8 - 1) + 1; ctr1 >= 1; ctr1--)
 	{
 	  PORTB = 0xFF;
 	  PORTB &= ~(1 << fix_led_numbering[ctr1 % 8]);
@@ -535,6 +569,7 @@ wobble3 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length, enum COLOR_t led_
 {
 
   // still somewhat unpolished !
+  // it doesn not run well - or at all - with MASTER/SLAVE syncing !
 
   uint8_t ctr1;
   uint8_t ctr2;
@@ -555,13 +590,6 @@ wobble3 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length, enum COLOR_t led_
 	      __delay_ms (2);	// this should be dynamically adapted to 'delay_time'
 	      color_off (led_color_2);
 	    }
-#ifdef MASTER
-	  __delay_ms (delay_time);
-	  sync ();
-#else
-	  sync ();
-	  __delay_ms (delay_time);
-#endif
 	}
     }
 }
@@ -664,7 +692,7 @@ color_off (enum COLOR_t led_color)
 void
 random_leds (void)
 {
-  set_led_hsv ((uint8_t) (random (__leds)), (uint16_t) (random (360)), 255, 255);
+  set_led_hsv ((uint8_t) (random (8)), (uint16_t) (random (360)), 255, 255);
 }
 
 void
@@ -673,18 +701,18 @@ fader (void)
   uint8_t ctr1;
   uint8_t led;
 
-  for (ctr1 = 0; ctr1 <= __max_brightness; ctr1++)
+  for (ctr1 = 0; ctr1 <= max_brightness; ctr1++)
     {
-      for (led = 0; led <= __max_led; led++)
+      for (led = 0; led <= (8 - 1); led++)
 	{
 	  set_led_rgb (led, ctr1, ctr1, ctr1);
 	}
       delay (__fade_delay);
     }
 
-  for (ctr1 = __max_brightness; (ctr1 >= 0) & (ctr1 != 255); ctr1--)
+  for (ctr1 = max_brightness; (ctr1 >= 0) & (ctr1 != 255); ctr1--)
     {
-      for (led = 0; led <= __max_led; led++)
+      for (led = 0; led <= (8 - 1); led++)
 	{
 	  set_led_rgb (led, ctr1, ctr1, ctr1);
 	}
@@ -708,7 +736,7 @@ color_wave (uint8_t width)
 {
   uint8_t led;
   static uint16_t shift = 0;
-  for (led = 0; led <= __max_led; led++)
+  for (led = 0; led <= (8 - 1); led++)
     {
       set_led_hsv (led, (uint16_t) (led) * (uint16_t) (width) + shift, 255, 255);
     }
@@ -724,7 +752,7 @@ void
 set_led_red (uint8_t led, uint8_t red)
 {
 #ifdef DOTCORR
-  int8_t dotcorr = (int8_t) (pgm_read_byte (&dotcorr_red[led])) * red / __brightness_levels;
+  int8_t dotcorr = (int8_t) (pgm_read_byte (&dotcorr_red[led])) * red / brightness_levels;
   uint8_t value;
   if (red + dotcorr < 0)
     {
@@ -744,7 +772,7 @@ void
 set_led_green (uint8_t led, uint8_t green)
 {
 #ifdef DOTCORR
-  int8_t dotcorr = (int8_t) (pgm_read_byte (&dotcorr_green[led])) * green / __brightness_levels;
+  int8_t dotcorr = (int8_t) (pgm_read_byte (&dotcorr_green[led])) * green / brightness_levels;
   uint8_t value;
   if (green + dotcorr < 0)
     {
@@ -764,7 +792,7 @@ void
 set_led_blue (uint8_t led, uint8_t blue)
 {
 #ifdef DOTCORR
-  int8_t dotcorr = (int8_t) (pgm_read_byte (&dotcorr_blue[led])) * blue / __brightness_levels;
+  int8_t dotcorr = (int8_t) (pgm_read_byte (&dotcorr_blue[led])) * blue / brightness_levels;
   uint8_t value;
   if (blue + dotcorr < 0)
     {
@@ -792,7 +820,7 @@ void
 set_all_rgb (uint8_t red, uint8_t green, uint8_t blue)
 {
   uint8_t ctr1;
-  for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
+  for (ctr1 = 0; ctr1 <= (8 - 1); ctr1++)
     {
       set_led_rgb (ctr1, red, green, blue);
     }
@@ -802,7 +830,7 @@ void
 set_all_hsv (uint16_t hue, uint8_t sat, uint8_t val)
 {
   uint8_t ctr1;
-  for (ctr1 = 0; ctr1 <= __max_led; ctr1++)
+  for (ctr1 = 0; ctr1 <= (8 - 1); ctr1++)
     {
       set_led_hsv (ctr1, hue, sat, val);
     }
@@ -812,7 +840,7 @@ void
 set_all_byte_hsv (uint8_t data_byte, uint16_t hue, uint8_t sat, uint8_t val)
 {
   uint8_t led;
-  for (led = 0; led <= __max_led; led++)
+  for (led = 0; led <= (8 - 1); led++)
     {
       if ((data_byte >> led) & (B00000001))
 	{
@@ -890,7 +918,7 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
       B = d;
     }
 
-  uint16_t scale_factor = mmd / __max_brightness;
+  uint16_t scale_factor = mmd / max_brightness;
 
   R = (uint8_t) (R / scale_factor);
   G = (uint8_t) (G / scale_factor);
@@ -905,7 +933,7 @@ set_led_hsv (uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
  */
 
 void
-setup_timer1_ovf (void)
+setup_timer1_ovf (uint8_t mode)
 {
   // Arduino runs at 16 Mhz...
   // Timer1 (16bit) Settings:
@@ -919,8 +947,27 @@ setup_timer1_ovf (void)
   //                                           1       1      0      external clock on T1 pin, falling edge
   //                                           1       1      1      external clock on T1 pin, rising edge
   //
-  TCCR1B &= ~((1 << CS11));
-  TCCR1B |= ((1 << CS12) | (1 << CS10));
+  switch (mode)
+    {
+    case 0:			// prescaler of 1024 used for multiplexed TRUE-RGB PWM mode (quite dim)
+      TCCR1B &= ~((1 << CS11));
+      TCCR1B |= ((1 << CS12) | (1 << CS10));
+      timer1_cnt = 0x0030;
+      rgb_mode = mode;
+      brightness_levels = 64;
+      max_brightness = 63;
+      break;
+    case 1:			// prescaler of 256 used for multiplexed 7 color RGB mode (brighter)
+      TCCR1B &= ~((1 << CS11) | (1 << CS10));
+      TCCR1B |= ((1 << CS12));
+      timer1_cnt = 0x0035;
+      rgb_mode = mode;
+      brightness_levels = 2;
+      max_brightness = 1;
+      break;
+    default:
+      break;
+    }
   //normal mode (16bit counter)
   TCCR1B &= ~((1 << WGM13) | (1 << WGM12));
   TCCR1A &= ~((1 << WGM11) | (1 << WGM10));
@@ -932,7 +979,7 @@ void
 enable_timer1_ovf (void)
 {
   TIMSK1 |= (1 << TOIE1);
-  TCNT1 = __TIMER1_MAX - __TIMER1_CNT;
+  TCNT1 = 0xFFFF - timer1_cnt;
 }
 
 void
@@ -943,34 +990,71 @@ disable_timer1_ovf (void)
 
 ISR (TIMER1_OVF_vect)
 {				/* Framebuffer interrupt routine */
-  TCNT1 = __TIMER1_MAX - __TIMER1_CNT;
-  uint8_t cycle;
+  TCNT1 = 0xFFFF - timer1_cnt;
+  uint8_t led;
 
-  for (cycle = 0; cycle < __max_brightness; cycle++)
+  switch (rgb_mode)
     {
-      uint8_t led;
-      for (led = 0; led <= __max_led; led++)
+    case 0:
+
+      uint8_t cycle;
+
+      for (cycle = 0; cycle < max_brightness; cycle++)
+	{
+	  uint8_t led;
+	  for (led = 0; led <= (8 - 1); led++)
+	    {
+
+	      PORTB = 0xFF;	// all cathodes HIGH --> OFF
+	      PORTD &= ~((1 << PD5) | (1 << PD6) | (1 << PD7));	// all relevant anodes LOW --> OFF
+	      PORTB &= ~(1 << fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
+
+	      if (cycle < brightness_red[led])
+		{
+		  PORTD |= (1 << RED_A);
+		}
+
+	      if (cycle < brightness_green[led])
+		{
+		  PORTD |= (1 << GREEN_A);
+		}
+
+	      if (cycle < brightness_blue[led])
+		{
+		  PORTD |= (1 << BLUE_A);
+		}
+	    }
+	}
+
+
+      break;
+    case 1:
+      for (led = 0; led <= (8 - 1); led++)
 	{
 
 	  PORTB = 0xFF;		// all cathodes HIGH --> OFF
 	  PORTD &= ~((1 << PD5) | (1 << PD6) | (1 << PD7));	// all relevant anodes LOW --> OFF
 	  PORTB &= ~(1 << fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
 
-	  if (cycle < brightness_red[led])
+	  if (brightness_red[led] > 0)
 	    {
 	      PORTD |= (1 << RED_A);
 	    }
 
-	  if (cycle < brightness_green[led])
+	  if (brightness_green[led] > 0)
 	    {
 	      PORTD |= (1 << GREEN_A);
 	    }
 
-	  if (cycle < brightness_blue[led])
+	  if (brightness_blue[led] > 0)
 	    {
 	      PORTD |= (1 << BLUE_A);
 	    }
+	  _delay_us (200);	// pov delay
 	}
+      break;
+    default:
+      break;
     }
   PORTB = 0xFF;			// all cathodes HIGH --> OFF
 }
@@ -1101,7 +1185,7 @@ set_led_hue (uint8_t led, uint16_t hue)
       B = d;
     }
 
-  uint16_t const scale_factor = modulation_depth / __max_brightness;
+  uint16_t const scale_factor = modulation_depth / max_brightness;
 
   R = (uint8_t) (R / scale_factor);
   G = (uint8_t) (G / scale_factor);
