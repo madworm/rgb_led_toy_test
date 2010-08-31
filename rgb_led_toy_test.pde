@@ -148,6 +148,15 @@ loop (void)
     }
 #endif
 
+#ifdef MASTER
+  __delay_ms (1000); //make sure all boards start at the same time after power on
+  sync ();
+#endif
+
+#ifdef SLAVE
+  sync ();
+#endif
+
   uint16_t ctr;
 
   setup_timer1_ovf (0);		// true RGB PWM mode
