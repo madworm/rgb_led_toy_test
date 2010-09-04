@@ -70,6 +70,7 @@
  * The silkscreen shows the little notches facing outward, which is now wrong for the new LEDs!
  */
 
+//#define V122
 #define NEW_PCB_yellow
 //#define NEW_PCB_green
 //#define OLD_PCB
@@ -103,6 +104,10 @@ const int8_t PROGMEM dotcorr_blue[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 #define __fade_delay 5
 #endif
 
+#ifdef V122
+uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };	// up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
+#endif
+
 #ifdef NEW_PCB_yellow
 uint8_t fix_led_numbering[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };	// up-to-date boards have proper pin order. I was just too lazy to remove it from all the functions ;-)
 #endif
@@ -121,10 +126,13 @@ setup (void)
 {
   DDRB |= ((1 << LED0) | (1 << LED1) | (1 << LED2) | (1 << LED3) | (1 << LED4) | (1 << LED5) | (1 << LED6) | (1 << LED7));	// set PORTB as output
   PORTB = 0xFF;			// all pins HIGH --> cathodes HIGH --> LEDs off
-  DDRD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));	// set PORTD #5-7 as output
-  PORTD &= ~((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));	// pins #5-7 LOW --> anodes LOW --> LEDs off
+
+  DDRD |= (RED_Ax | GREEN_Ax | BLUE_Ax);	// set relevant pins as outputs
+  PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// relevant pins LOW --> anodes LOW --> LEDs off
+
   DDRC &= ~((1 << PC2) | (1 << PC3) | (1 << PC4) | (1 << PC5));	// PC2-5 is an input
   PORTC |= ((1 << PC4));	// internal pull-up on
+
   randomSeed (555);
   setup_timer1_ovf (0);		/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
   set_all_rgb (0, 0, 0);	/* set the display to BLACK. Only affects PWM mode */
@@ -149,13 +157,15 @@ loop (void)
 #endif
 
 #ifdef MASTER
-  __delay_ms (1000); //make sure all boards start at the same time after power on
+  __delay_ms (1000);		//make sure all boards start at the same time after power on
   sync ();
 #endif
 
 #ifdef SLAVE
   sync ();
 #endif
+
+  more_light_hack_test ();
 
   uint16_t ctr;
 
@@ -289,6 +299,79 @@ sync (void)
 #endif
 }
 
+#ifdef MASTER
+inline void
+sync_and_delay (uint16_t delay_time)
+{
+  __delay_ms (delay_time);
+  sync ();
+}
+#else
+inline void
+sync_and_delay (uint16_t delay_time)
+{
+  sync ();
+  __delay_ms (delay_time);
+}
+#endif
+
+void
+more_light_hack_test (void)
+{
+  //
+  // only works with V1.22 hack
+  // no effect on un-hacked boards
+  // If RED_A, RED_A2 ... are not switched at the same time
+  // the one that should be off must be set to input + pullup off
+  // If it is just set to LOW, it quasi shorts the other one to GND.
+  // 
+  PORTB = 0x00;			// LED cathodes low --> on
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= (1 << RED_A);
+  PORTD |= ((1 << RED_A));
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= RED_Ax;
+  PORTD |= RED_Ax;
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= (1 << GREEN_A);
+  PORTD |= (1 << GREEN_A);
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= GREEN_Ax;
+  PORTD |= GREEN_Ax;
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= (1 << BLUE_A);
+  PORTD |= (1 << BLUE_A);
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= BLUE_Ax;
+  PORTD |= BLUE_Ax;
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
+  PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  DDRD |= (RED_Ax | GREEN_Ax | BLUE_Ax);
+  PORTD |= (RED_Ax | GREEN_Ax | BLUE_Ax);
+  delay (500);
+  DDRD = 0x00;			// anodes high z --> off
+  PORTD = 0x00;			// pull-ups off
+  delay (500);
+  setup ();			// restore pin states...
+}
+
 void
 rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times, uint16_t delay_time)
 {
@@ -304,13 +387,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
 	    {
 	      PORTB = 0xFF;
 	      PORTB &= ~((1 << fix_led_numbering[ctr1]) | (1 << fix_led_numbering[(ctr1 + 4)]));
-#ifdef MASTER
-	      __delay_ms (delay_time);
-	      sync ();
-#else
-	      sync ();
-	      __delay_ms (delay_time);
-#endif
+	      sync_and_delay (delay_time);
 	    }
 	}
       break;
@@ -321,13 +398,7 @@ rotating_bar (enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
 	    {
 	      PORTB = 0xFF;
 	      PORTB &= ~((1 << fix_led_numbering[ctr1]) | (1 << fix_led_numbering[(ctr1 + 4) % 8]));
-#ifdef MASTER
-	      __delay_ms (delay_time);
-	      sync ();
-#else
-	      sync ();
-	      __delay_ms (delay_time);
-#endif
+	      sync_and_delay (delay_time);
 	    }
 	}
       break;
@@ -349,13 +420,7 @@ white_clockwise (uint8_t times, uint16_t delay_time)
 	{
 	  PORTB = 0xFF;
 	  PORTB &= ~(1 << fix_led_numbering[ctr1]);
-#ifdef MASTER
-	  __delay_ms (delay_time);
-	  sync ();
-#else
-	  sync ();
-	  __delay_ms (delay_time);
-#endif
+	  sync_and_delay (delay_time);
 	}
     }
   color_off (WHITE);
@@ -373,13 +438,7 @@ white_counterclockwise (uint8_t times, uint16_t delay_time)
 	{
 	  PORTB = 0xFF;
 	  PORTB &= ~(1 << fix_led_numbering[ctr1 % 8]);
-#ifdef MASTER
-	  __delay_ms (delay_time);
-	  sync ();
-#else
-	  sync ();
-	  __delay_ms (delay_time);
-#endif
+	  sync_and_delay (delay_time);
 	}
     }
   color_off (WHITE);
@@ -393,21 +452,9 @@ blink_all_red_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
       PORTB = 0xFF;		// off
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
     }
   color_off (RED);
 }
@@ -420,21 +467,9 @@ blink_all_green_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
       PORTB = 0xFF;		// off
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
     }
   color_off (GREEN);
 }
@@ -447,21 +482,9 @@ blink_all_blue_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
       PORTB = 0xFF;		// off
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
     }
   color_off (BLUE);
 }
@@ -474,21 +497,9 @@ blink_all_white_times (uint8_t times, uint16_t delay_time)
   for (ctr = 0; ctr < times; ctr++)
     {
       PORTB = 0x00;
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
       PORTB = 0xFF;		// off
-#ifdef MASTER
-      __delay_ms (delay_time);
-      sync ();
-#else
-      sync ();
-      __delay_ms (delay_time);
-#endif
+      sync_and_delay (delay_time);
     }
   color_off (WHITE);
 }
@@ -541,13 +552,7 @@ wobble2 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length, enum COLOR_t led_
 	  for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
 	    {
 	      set_byte (wobble_pattern_ptr[ctr2]);
-#ifdef MASTER
-	      __delay_ms (delay_time);
-	      sync ();
-#else
-	      sync ();
-	      __delay_ms (delay_time);
-#endif
+	      sync_and_delay (delay_time);
 	    }
 	}
       break;
@@ -557,13 +562,7 @@ wobble2 (uint8_t * wobble_pattern_ptr, uint8_t pattern_length, enum COLOR_t led_
 	  for (ctr2 = 0; ctr2 < pattern_length; ctr2++)
 	    {
 	      set_byte (rotate_byte (wobble_pattern_ptr[ctr2], 4, CW));
-#ifdef MASTER
-	      __delay_ms (delay_time);
-	      sync ();
-#else
-	      sync ();
-	      __delay_ms (delay_time);
-#endif
+	      sync_and_delay (delay_time);
 	    }
 	}
       break;
@@ -634,25 +633,28 @@ color_on (enum COLOR_t led_color)
   switch (led_color)
     {				// turn ON the necessary anodes
     case RED:
-      PORTD |= ((1 << RED_A));
+      PORTD |= RED_Ax;
       break;
     case GREEN:
-      PORTD |= ((1 << GREEN_A));
+      PORTD |= GREEN_Ax;
       break;
     case BLUE:
-      PORTD |= ((1 << BLUE_A));
+      PORTD |= BLUE_Ax;
       break;
     case YELLOW:
-      PORTD |= ((1 << RED_A) | (1 << GREEN_A));
+      PORTD |= (RED_Ax | GREEN_Ax);
       break;
     case TURQUOISE:
-      PORTD |= ((1 << GREEN_A) | (1 << BLUE_A));
+      PORTD |= (GREEN_Ax | BLUE_Ax);
       break;
     case PURPLE:
-      PORTD |= ((1 << RED_A) | (1 << BLUE_A));
+      PORTD |= (RED_Ax | BLUE_Ax);
       break;
     case WHITE:
-      PORTD |= ((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
+      PORTD |= (RED_Ax | GREEN_Ax | BLUE_Ax);
+      break;
+    case BLACK:
+      PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);
       break;
     default:
       break;
@@ -665,25 +667,28 @@ color_off (enum COLOR_t led_color)
   switch (led_color)
     {				// turn OFF the anodes again when we're done
     case RED:
-      PORTD &= ~((1 << RED_A));
+      PORTD &= ~(RED_Ax);
       break;
     case GREEN:
-      PORTD &= ~((1 << GREEN_A));
+      PORTD &= ~(GREEN_Ax);
       break;
     case BLUE:
-      PORTD &= ~((1 << BLUE_A));
+      PORTD &= ~(BLUE_Ax);
       break;
     case YELLOW:
-      PORTD &= ~((1 << RED_A) | (1 << GREEN_A));
+      PORTD &= ~(RED_Ax | GREEN_Ax);
       break;
     case TURQUOISE:
-      PORTD &= ~((1 << GREEN_A) | (1 << BLUE_A));
+      PORTD &= ~(GREEN_Ax | BLUE_Ax);
       break;
     case PURPLE:
-      PORTD &= ~((1 << RED_A) | (1 << BLUE_A));
+      PORTD &= ~(RED_Ax | BLUE_Ax);
       break;
     case WHITE:
-      PORTD &= ~((1 << RED_A) | (1 << GREEN_A) | (1 << BLUE_A));
+      PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);
+      break;
+    case BLACK:
+      PORTD |= (RED_Ax | GREEN_Ax | BLUE_Ax);
       break;
     default:
       break;
@@ -1015,26 +1020,25 @@ ISR (TIMER1_OVF_vect)
 	    {
 
 	      PORTB = 0xFF;	// all cathodes HIGH --> OFF
-	      PORTD &= ~((1 << PD5) | (1 << PD6) | (1 << PD7));	// all relevant anodes LOW --> OFF
+	      PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
 	      PORTB &= ~(1 << fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
 
 	      if (cycle < brightness_red[led])
 		{
-		  PORTD |= (1 << RED_A);
+		  PORTD |= RED_Ax;
 		}
 
 	      if (cycle < brightness_green[led])
 		{
-		  PORTD |= (1 << GREEN_A);
+		  PORTD |= GREEN_Ax;
 		}
 
 	      if (cycle < brightness_blue[led])
 		{
-		  PORTD |= (1 << BLUE_A);
+		  PORTD |= BLUE_Ax;
 		}
 	    }
 	}
-
 
       break;
     case 1:
@@ -1042,22 +1046,22 @@ ISR (TIMER1_OVF_vect)
 	{
 
 	  PORTB = 0xFF;		// all cathodes HIGH --> OFF
-	  PORTD &= ~((1 << PD5) | (1 << PD6) | (1 << PD7));	// all relevant anodes LOW --> OFF
+	  PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
 	  PORTB &= ~(1 << fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
 
 	  if (brightness_red[led] > 0)
 	    {
-	      PORTD |= (1 << RED_A);
+	      PORTD |= RED_Ax;
 	    }
 
 	  if (brightness_green[led] > 0)
 	    {
-	      PORTD |= (1 << GREEN_A);
+	      PORTD |= GREEN_Ax;
 	    }
 
 	  if (brightness_blue[led] > 0)
 	    {
-	      PORTD |= (1 << BLUE_A);
+	      PORTD |= BLUE_Ax;
 	    }
 	  _delay_us (200);	// pov delay
 	}

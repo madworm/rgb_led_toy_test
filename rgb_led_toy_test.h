@@ -5,6 +5,7 @@
 
 enum COLOR_t
 {
+  BLACK,
   RED,
   GREEN,
   BLUE,
@@ -64,6 +65,15 @@ enum DIRECTION_t
 #define LED6 PB6
 #define LED7 PB7
 
+#ifdef V122
+#define RED_A PD6
+#define GREEN_A PD5
+#define BLUE_A PD7
+#define RED_A2 PD3
+#define GREEN_A2 PD2
+#define BLUE_A2 PD4
+#endif
+
 #ifdef NEW_PCB_yellow // new LEDs from JELEDHK (ebay). Cheaper, but reversed chips in the PLCC6-5050 package --> LEDs rotated by 180° 
 #define RED_A PD6
 #define GREEN_A PD5
@@ -80,6 +90,16 @@ enum DIRECTION_t
 #define RED_A PD5
 #define GREEN_A PD6
 #define BLUE_A PD7
+#endif
+
+#ifdef V122
+#define RED_Ax ((1 << RED_A) | (1 << RED_A2))
+#define GREEN_Ax ((1 << GREEN_A) | (1 << GREEN_A2))
+#define BLUE_Ax ((1 << BLUE_A) | (1 << BLUE_A2))
+#else
+#define RED_Ax (1 << RED_A)
+#define GREEN_Ax (1 << GREEN_A)
+#define BLUE_Ax (1 << BLUE_A)
 #endif
 
 /*
