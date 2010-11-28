@@ -165,7 +165,9 @@ loop (void)
   sync ();
 #endif
 
-  more_light_hack_test ();
+  #ifdef V122
+    more_light_hack_test ();
+  #endif
 
   uint16_t ctr;
 
