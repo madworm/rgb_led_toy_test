@@ -185,37 +185,37 @@ void twi_white_chaser(void) {
   for(twi_slave_address = 1; twi_slave_address <= __TWI_SLAVE_ADDRESS_MAX; twi_slave_address++) {
     if(twi_slave_address == __TWI_MASTER_ADDRESS) {
       set_all_rgb(1,1,1);
-      delay (20);
+      delay (5);
       set_all_rgb(0,0,0);
-      delay (20);
+      delay (5);
     }
     else {
       Wire.beginTransmission (twi_slave_address);
       Wire.send (6); // set_all_rgb(1,1,1); // 7 color mode WHITE
       Wire.endTransmission ();
-      delay (20);
+      delay (5);
       Wire.beginTransmission (twi_slave_address);
       Wire.send(0); // all off
       Wire.endTransmission ();
-      delay (20);
+      delay (5);
     }
   }
   for(twi_slave_address = __TWI_SLAVE_ADDRESS_MAX; twi_slave_address >= 1; twi_slave_address--) {
     if(twi_slave_address == __TWI_MASTER_ADDRESS) {
       set_all_rgb(1,1,1);
-      delay (20);
+      delay (5);
       set_all_rgb(0,0,0);
-      delay (20);
+      delay (5);
     }
     else {
       Wire.beginTransmission (twi_slave_address);
       Wire.send (6); // set_all_rgb(1,1,1); // 7 color mode WHITE
       Wire.endTransmission ();
-      delay (20);
+      delay (5);
       Wire.beginTransmission (twi_slave_address);
       Wire.send(0); // all off
       Wire.endTransmission ();
-      delay (20);
+      delay (5);
     }
   }
   
