@@ -117,6 +117,7 @@ twi_stuff (void)
     {
       for(counter = 0; counter < 10; counter++) {
         twi_white_chaser();
+        twi_white_random_flasher();
       }
       twi_off_all_boards(); // do_twi_stuff = 0; // locally and remote via I2C
     }
@@ -164,12 +165,41 @@ twi_stuff (void)
 }
 
 #ifdef MASTER
-void twi_random_white(void) {
+void twi_white_random_flasher(void) {
+  uint8_t twi_slave_address;
+  uint16_t counter = 0;
+  
+  twi_7_color_mode_on_all_boards();
+  
+  while(counter < 500) {
+    twi_slave_address = (uint8_t)(random(1,22)); // should return rnd between 1 and 21 (inclusive)
+    if(twi_slave_address == __TWI_MASTER_ADDRESS) {
+      set_all_rgb(0,0,0); // go dark
+      delay(10);
+      set_all_rgb(1,1,1); // go white
+      delay(10);
+      set_all_rgb(0,0,0); // go dark again
+    }
+    else{
+      Wire.beginTransmission(twi_slave_address);
+      Wire.send(0); // go dark
+      Wire.endTransmission();
+      delay(10);
+      Wire.beginTransmission(twi_slave_address);
+      Wire.send(6); // go white
+      Wire.endTransmission();
+      delay(10);
+      Wire.beginTransmission(twi_slave_address);
+      Wire.send(0); // go dark
+      Wire.endTransmission();
+    }
+    counter++;
+  }  
+  twi_7_color_mode_off_all_boards();
 }
 
-void twi_white_chaser(void) {
+void twi_7_color_mode_on_all_boards(void) {
   uint8_t twi_slave_address;
-
   for(twi_slave_address = 1; twi_slave_address <= __TWI_SLAVE_ADDRESS_MAX; twi_slave_address++) {
     if(twi_slave_address == __TWI_MASTER_ADDRESS) {
       setup_timer1_ovf (1);		// 7 color mode
@@ -181,7 +211,27 @@ void twi_white_chaser(void) {
       Wire.endTransmission ();
     }
   }
+}
 
+void twi_7_color_mode_off_all_boards(void) {
+  uint8_t twi_slave_address;
+  for(twi_slave_address = 1; twi_slave_address <= __TWI_SLAVE_ADDRESS_MAX; twi_slave_address++) {
+    if(twi_slave_address == __TWI_MASTER_ADDRESS) {
+      disable_timer1_ovf ();		// stop PWM mode
+    }
+    else{
+      Wire.beginTransmission (twi_slave_address);
+      Wire.send (4); // stop 7 color mode
+      Wire.endTransmission ();
+    }
+  }
+}
+
+void twi_white_chaser(void) {
+  uint8_t twi_slave_address;
+
+  twi_7_color_mode_on_all_boards();
+ 
   for(twi_slave_address = 1; twi_slave_address <= __TWI_SLAVE_ADDRESS_MAX; twi_slave_address++) {
     if(twi_slave_address == __TWI_MASTER_ADDRESS) {
       set_all_rgb(1,1,1);
@@ -218,18 +268,9 @@ void twi_white_chaser(void) {
       delay (5);
     }
   }
-  
-  for(twi_slave_address = 1; twi_slave_address <= __TWI_SLAVE_ADDRESS_MAX; twi_slave_address++) {
-    if(twi_slave_address == __TWI_MASTER_ADDRESS) {
-      disable_timer1_ovf ();		// stop PWM mode
-    }
-    else{
-      Wire.beginTransmission (twi_slave_address);
-      Wire.send (4); // stop 7 color mode
-      Wire.endTransmission ();
-    }
-  }
-  
+ 
+  twi_7_color_mode_off_all_boards();
+
 }
 
 void
