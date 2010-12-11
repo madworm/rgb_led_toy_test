@@ -3,24 +3,21 @@
  * Normally this could just be in the main source code file
  */
 
-enum COLOR_t
-{
-  BLACK,
-  RED,
-  GREEN,
-  BLUE,
-  YELLOW,
-  TURQUOISE,
-  PURPLE,
-  WHITE
+enum COLOR_t {
+	BLACK,
+	RED,
+	GREEN,
+	BLUE,
+	YELLOW,
+	TURQUOISE,
+	PURPLE,
+	WHITE
 };
 
-enum DIRECTION_t
-{
-  CW,
-  CCW
+enum DIRECTION_t {
+	CW,
+	CCW
 };
-
 
 // PORT-FIX for ATmega328 on windows + Arduino IDE
 /*
@@ -52,7 +49,6 @@ enum DIRECTION_t
 #define PD7 PORTD7
 */
 
-
 /*
  * Nicer naming of the pins
  */
@@ -65,7 +61,7 @@ enum DIRECTION_t
 #define LED6 PB6
 #define LED7 PB7
 
-#ifdef NEW_PCB_yellow // new LEDs from JELEDHK (ebay). Cheaper, but reversed chips in the PLCC6-5050 package --> LEDs rotated by 180° 
+#ifdef NEW_PCB_yellow		// new LEDs from JELEDHK (ebay). Cheaper, but reversed chips in the PLCC6-5050 package --> LEDs rotated by 180°
 #define RED_A PD6
 #define GREEN_A PD5
 #define BLUE_A PD7
@@ -97,30 +93,30 @@ enum DIRECTION_t
  */
 
 uint8_t wobble_pattern_1[8] = {
-  0b01000000,
-  0b10100000,
-  0b00010001,
-  0b00001010,
-  0b00000100,
-  0b00001010,
-  0b00010001,
-  0b10100000
+	0b01000000,
+	0b10100000,
+	0b00010001,
+	0b00001010,
+	0b00000100,
+	0b00001010,
+	0b00010001,
+	0b10100000
 };
 
 uint8_t wobble_pattern_2[8] = {
-  0b01000100,
-  0b10101010,
-  0b00010001,
-  0b10101010
+	0b01000100,
+	0b10101010,
+	0b00010001,
+	0b10101010
 };
 
 uint8_t wobble_pattern_3[8] = {
-  0b11000111,
-  0b11000110,
-  0b01000100,
-  0b01101100,
-  0b01111100,
-  0b01101100,
-  0b01000100,
-  0b11000110
+	0b11000111,
+	0b11000110,
+	0b01000100,
+	0b01101100,
+	0b01111100,
+	0b01101100,
+	0b01000100,
+	0b11000110
 };
