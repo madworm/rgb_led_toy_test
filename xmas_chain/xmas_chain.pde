@@ -355,16 +355,16 @@ void non_twi_stuff(void)
 	__delay_ms(2500);	// wait for the slave to finish after the _un-synced_ PWM demo
 	sync();
 
-	blink_all_red_times(10, 20);
-	blink_all_green_times(10, 20);
-	blink_all_blue_times(10, 20);
-	blink_all_white_times(10, 20);
+	blink_all(RED, 10, 20);
+	blink_all(GREEN, 10, 20);
+	blink_all(BLUE, 10, 20);
+	blink_all(WHITE, 10, 20);
 
 	wobble2(wobble_pattern_1, 8, RED, CW, 10, 80);
 	wobble2(wobble_pattern_3, 8, YELLOW, CW, 10, 80);
 
-	white_clockwise(10, 20);
-	white_counterclockwise(10, 20);
+	rotating_dot(WHITE, CW, 10, 20);
+	rotating_dot(WHITE, CCW, 10, 20);
 
 	rotating_bar(BLUE, CCW, 15, 75);
 	rotating_bar(GREEN, CW, 15, 75);
@@ -382,16 +382,16 @@ void non_twi_stuff(void)
 #ifdef SLAVE
 	sync();
 
-	blink_all_red_times(10, 20);
-	blink_all_green_times(10, 20);
-	blink_all_blue_times(10, 20);
-	blink_all_white_times(10, 20);
+	blink_all(RED, 10, 20);
+	blink_all(GREEN, 10, 20);
+	blink_all(BLUE, 10, 20);
+	blink_all(WHITE, 10, 20);
 
 	wobble2(wobble_pattern_1, 8, RED, CCW, 10, 80);
 	wobble2(wobble_pattern_3, 8, YELLOW, CW, 10, 80);
 
-	white_counterclockwise(10, 20);
-	white_clockwise(10, 20);
+	rotating_dot(WHITE, CCW, 10, 20);
+	rotating_dot(WHITE, CW, 10, 20);
 
 	rotating_bar(BLUE, CW, 15, 75);
 	rotating_bar(GREEN, CCW, 15, 75);
@@ -547,86 +547,49 @@ rotating_bar(enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
 	color_off(led_color);
 }
 
-void white_clockwise(uint8_t times, uint16_t delay_time)
+void
+rotating_dot(enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
+	     uint16_t delay_time)
 {
-	color_on(WHITE);
 	uint8_t ctr1;
 	uint8_t ctr2;
-	for (ctr2 = 0; ctr2 < times; ctr2++) {
-		for (ctr1 = 0; ctr1 <= (8 - 1); ctr1++) {
-			PORTB = 0xFF;
-			PORTB &= ~_BV(fix_led_numbering[ctr1]);
-			sync_and_delay(delay_time);
+	color_on(led_color);
+	switch (direction) {
+	case CW:
+		for (ctr2 = 0; ctr2 < times; ctr2++) {
+			for (ctr1 = 0; ctr1 <= (8 - 1); ctr1++) {
+				PORTB = 0xFF;
+				PORTB &= ~_BV(fix_led_numbering[ctr1]);
+				sync_and_delay(delay_time);
+			}
 		}
-	}
-	color_off(WHITE);
-}
-
-void white_counterclockwise(uint8_t times, uint16_t delay_time)
-{
-	color_on(WHITE);
-	uint8_t ctr1;
-	uint8_t ctr2;
-	for (ctr2 = 0; ctr2 < times; ctr2++) {
-		for (ctr1 = (8 - 1) + 1; ctr1 >= 1; ctr1--) {
-			PORTB = 0xFF;
-			PORTB &= ~_BV(fix_led_numbering[ctr1 % 8]);
-			sync_and_delay(delay_time);
+		break;
+	case CCW:
+		for (ctr2 = 0; ctr2 < times; ctr2++) {
+			for (ctr1 = (8 - 1) + 1; ctr1 >= 1; ctr1--) {
+				PORTB = 0xFF;
+				PORTB &= ~_BV(fix_led_numbering[ctr1 % 8]);
+				sync_and_delay(delay_time);
+			}
 		}
+		break;
+	default:
+		break;
 	}
-	color_off(WHITE);
+	color_off(led_color);
 }
 
-void blink_all_red_times(uint8_t times, uint16_t delay_time)
+void blink_all(COLOR_t color, uint8_t times, uint16_t delay_time)
 {
 	uint8_t ctr;
-	color_on(RED);
+	color_on(color);
 	for (ctr = 0; ctr < times; ctr++) {
-		PORTB = 0x00;
+		PORTB = 0x00;	// on
 		sync_and_delay(delay_time);
 		PORTB = 0xFF;	// off
 		sync_and_delay(delay_time);
 	}
-	color_off(RED);
-}
-
-void blink_all_green_times(uint8_t times, uint16_t delay_time)
-{
-	uint8_t ctr;
-	color_on(GREEN);
-	for (ctr = 0; ctr < times; ctr++) {
-		PORTB = 0x00;
-		sync_and_delay(delay_time);
-		PORTB = 0xFF;	// off
-		sync_and_delay(delay_time);
-	}
-	color_off(GREEN);
-}
-
-void blink_all_blue_times(uint8_t times, uint16_t delay_time)
-{
-	uint8_t ctr;
-	color_on(BLUE);
-	for (ctr = 0; ctr < times; ctr++) {
-		PORTB = 0x00;
-		sync_and_delay(delay_time);
-		PORTB = 0xFF;	// off
-		sync_and_delay(delay_time);
-	}
-	color_off(BLUE);
-}
-
-void blink_all_white_times(uint8_t times, uint16_t delay_time)
-{
-	uint8_t ctr;
-	color_on(WHITE);
-	for (ctr = 0; ctr < times; ctr++) {
-		PORTB = 0x00;
-		sync_and_delay(delay_time);
-		PORTB = 0xFF;	// off
-		sync_and_delay(delay_time);
-	}
-	color_off(WHITE);
+	color_off(color);
 }
 
 void __delay_ms(uint16_t delay_time)
@@ -645,10 +608,8 @@ void __delay_ms(uint16_t delay_time)
 void set_byte(uint8_t data_byte)
 {
 	uint8_t ctr;
-	uint8_t what_bit;
 	for (ctr = 0; ctr <= 7; ctr++) {
-		what_bit = (1 << ctr);
-		if (data_byte & what_bit) {
+		if (data_byte & _BV(ctr)) {
 			PORTB &= ~_BV(fix_led_numbering[ctr]);	// cathode low, LED on
 		} else {
 			PORTB |= _BV(fix_led_numbering[ctr]);
@@ -941,7 +902,7 @@ void set_all_byte_hsv(uint8_t data_byte, uint16_t hue, uint8_t sat, uint8_t val)
 {
 	uint8_t led;
 	for (led = 0; led <= (8 - 1); led++) {
-		if ((data_byte >> led) & (B00000001)) {
+		if (data_byte & _BV(led)) {
 			set_led_hsv(led, hue, sat, val);
 		} else {
 			set_led_rgb(led, 0, 0, 0);

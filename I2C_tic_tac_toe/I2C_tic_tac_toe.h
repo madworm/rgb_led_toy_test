@@ -3,16 +3,15 @@
  * Normally this could just be in the main source code file
  */
 
-enum COLOR_t
-{
-  BLACK,
-  RED,
-  GREEN,
-  BLUE,
-  YELLOW,
-  TURQUOISE,
-  PURPLE,
-  WHITE
+enum COLOR_t {
+	BLACK,
+	RED,
+	GREEN,
+	BLUE,
+	YELLOW,
+	TURQUOISE,
+	PURPLE,
+	WHITE
 };
 
 // PORT-FIX for ATmega328 on windows + Arduino IDE
@@ -44,7 +43,6 @@ enum COLOR_t
 #define PD6 PORTD6
 #define PD7 PORTD7
 */
-
 
 /*
  * Nicer naming of the pins

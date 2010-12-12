@@ -89,13 +89,13 @@ enum DIRECTION_t {
 #endif
 
 #ifdef V122
-#define RED_Ax ((1 << RED_A) | (1 << RED_A2))
-#define GREEN_Ax ((1 << GREEN_A) | (1 << GREEN_A2))
-#define BLUE_Ax ((1 << BLUE_A) | (1 << BLUE_A2))
+#define RED_Ax ( _BV(RED_A) | _BV(RED_A2) )
+#define GREEN_Ax ( _BV(GREEN_A) | _BV(GREEN_A2) )
+#define BLUE_Ax ( _BV(BLUE_A) | _BV(BLUE_A2) )
 #else
-#define RED_Ax (1 << RED_A)
-#define GREEN_Ax (1 << GREEN_A)
-#define BLUE_Ax (1 << BLUE_A)
+#define RED_Ax _BV(RED_A)
+#define GREEN_Ax _BV(GREEN_A)
+#define BLUE_Ax _BV(BLUE_A)
 #endif
 
 /*
@@ -108,7 +108,7 @@ enum DIRECTION_t {
  */
 
 uint8_t wobble_pattern_1[8] = {
-        0b01000000,
+	0b01000000,
 	0b10100000,
 	0b00010001,
 	0b00001010,
