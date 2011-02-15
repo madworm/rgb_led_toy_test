@@ -88,9 +88,8 @@ uint8_t brightness_blue[8];	/* memory for BLUE LEDs */
 
 /* all of the volatile variables will be set in setup_timer1_ctc() */
 volatile uint8_t rgb_mode;	/* 0 for multiplexed TRUE-RGB (dim), 1 for multiplexed 7 color RGB (brighter and just 7 simultaneous colors including white) */
-volatile uint8_t brightness_levels;
 volatile uint8_t max_brightness;
-#define __TRUE_RGB_OCR1A 0x0045;	// using a prescaler of 1024
+#define __TRUE_RGB_OCR1A 0x040;	// using a prescaler of 1024
 #define __7_COLOR_OCR1A 0x0035;	// using a prescaler of 256
 
 //#define DOTCORR  /* enable/disable dot correction - only valid for true RGB PWM mode ! */
@@ -98,7 +97,7 @@ volatile uint8_t max_brightness;
 #ifdef DOTCORR
 const int8_t PROGMEM dotcorr_red[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 const int8_t PROGMEM dotcorr_green[8] =
-    { -15, -15, -15, -15, -15, -15, -15, -15 };
+    { -24, -24, -24, -24, -15, -15, -15, -15 };
 const int8_t PROGMEM dotcorr_blue[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 #define __fade_delay 2
@@ -676,7 +675,7 @@ void set_led_red(uint8_t led, uint8_t red)
 #ifdef DOTCORR
 	int8_t dotcorr =
 	    (int8_t) (pgm_read_byte(&dotcorr_red[led])) * red /
-	    brightness_levels;
+	    max_brightness;
 	uint8_t value;
 	if (red + dotcorr < 0) {
 		value = 0;
@@ -694,7 +693,7 @@ void set_led_green(uint8_t led, uint8_t green)
 #ifdef DOTCORR
 	int8_t dotcorr =
 	    (int8_t) (pgm_read_byte(&dotcorr_green[led])) * green /
-	    brightness_levels;
+	    max_brightness;
 	uint8_t value;
 	if (green + dotcorr < 0) {
 		value = 0;
@@ -712,7 +711,7 @@ void set_led_blue(uint8_t led, uint8_t blue)
 #ifdef DOTCORR
 	int8_t dotcorr =
 	    (int8_t) (pgm_read_byte(&dotcorr_blue[led])) * blue /
-	    brightness_levels;
+	    max_brightness;
 	uint8_t value;
 	if (blue + dotcorr < 0) {
 		value = 0;
@@ -860,8 +859,7 @@ void setup_timer1_ctc(uint8_t mode)
 		OCR1A = __TRUE_RGB_OCR1A;
 		/* rest */
 		rgb_mode = mode;
-		brightness_levels = 64;
-		max_brightness = 63;	// brightness_levels - 1
+		max_brightness = 64;	
 		break;
 	case 1:		/* multiplexed 7 color RGB mode (brighter) */
 		/* set prescaler to 256 */
@@ -878,8 +876,6 @@ void setup_timer1_ctc(uint8_t mode)
 		OCR1A = __7_COLOR_OCR1A;
 		/* rest */
 		rgb_mode = mode;
-		brightness_levels = 2;
-		max_brightness = 1;
 		break;
 	default:
 		break;
@@ -910,7 +906,7 @@ ISR(TIMER1_COMPA_vect)
 	switch (rgb_mode) {
 	case 0:
 		uint8_t cycle;
-		for (cycle = 0; cycle < max_brightness; cycle++) {
+		for (cycle = 0; cycle <= (max_brightness -1); cycle++) {
 			uint8_t led;
 			for (led = 0; led <= (8 - 1); led++) {
 
