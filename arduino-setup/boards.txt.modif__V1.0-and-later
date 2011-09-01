@@ -1,0 +1,65 @@
+#
+# add this to the 'boards.txt' of your arduino software
+#
+#
+
+##############################################################
+#
+# to activate this board, select it and use:
+#
+# 'Burn Bootloader' - 'w/ USBtinyISP' just once
+# this makes sure the correct FUSE settings are used
+#
+RGBLedRing1.name=RGB LED RING - ATmega168 / 8MHz RC OSC / USBtiny
+RGBLedRing1.upload.maximum_size=16384
+RGBLedRing1.upload.speed=115200
+RGBLedRing1.upload.using=arduino:usbtinyisp
+RGBLedRing1.bootloader.low_fuses=0xE2
+RGBLedRing1.bootloader.high_fuses=0xDD
+RGBLedRing1.bootloader.extended_fuses=0x05
+
+## just so the IDE doesn't throw an error
+## it will be overwritten, but we need the correct FUSE settings
+RGBLedRing1.bootloader.path=optiboot
+RGBLedRing1.bootloader.file=optiboot_pro_8MHz.hex
+##
+
+RGBLedRing1.bootloader.unlock_bits=0x3F
+RGBLedRing1.bootloader.lock_bits=0x3F
+RGBLedRing1.build.mcu=atmega168
+RGBLedRing1.build.f_cpu=8000000L
+RGBLedRing1.build.core=arduino
+RGBLedRing1.build.variant=eightanaloginputs
+#
+#
+#
+##############################################################
+
+
+
+##############################################################
+#
+# to activate this board, select it and use:
+#
+# 'Burn Bootloader' - 'w/ USBtinyISP' just once
+# this makes sure the correct FUSE settings are used
+#
+RGBLedRing2.name=RGB LED RING - ATmega168 / 8MHz RC OSC / optiboot Bootloader
+RGBLedRing2.upload.protocol=stk500
+RGBLedRing2.upload.maximum_size=15872
+RGBLedRing2.upload.speed=115200
+RGBLedRing2.bootloader.low_fuses=0xE2
+RGBLedRing2.bootloader.high_fuses=0xDD
+RGBLedRing2.bootloader.extended_fuses=0x04
+RGBLedRing2.bootloader.path=optiboot
+RGBLedRing2.bootloader.file=optiboot_pro_8MHz.hex
+RGBLedRing2.bootloader.unlock_bits=0x3F
+RGBLedRing2.bootloader.lock_bits=0x0F
+RGBLedRing2.build.mcu=atmega168
+RGBLedRing2.build.f_cpu=8000000L
+RGBLedRing2.build.core=arduino
+RGBLedRing2.build.variant=eightanaloginputs
+#
+#
+#
+##############################################################
