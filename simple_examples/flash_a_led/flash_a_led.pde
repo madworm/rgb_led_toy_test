@@ -23,6 +23,17 @@
  * 'PC3' - equivalent Arduino pin: analog pin #3 / digital pin #17
  * 'PC2' - equivalent Arduino pin: analog pin #2 / digital pin #16
  *
+ *
+ * DDRB:  Data Direction Register B: make pins inputs or outputs
+ * PORTB: OUTPUT Register B        : set a pin to HIGH or LOW
+ *
+ * make 'PB6' an output:  DDRB |= _BV(PB6);   // set bit 'PB6' in the DDRB register to 1
+ * make 'PB6' an input:   DDRB &= ~_BV(PB6);  // set bit 'PB6' in the DDRB register to 0
+ *  set 'PB6' to HIGH:    PORTB |= _BV(PB6);  // set bit 'PB6' in the PORTB register to 1
+ *  set 'PB6' to LOW:     PORTB &= ~_BV(PB6); // set bit 'PB6' in the PORTB register to 0
+ *
+ * Dealing with 'PB7' works just like with 'PB6'.
+ *
  */
 
 void setup(void) {
