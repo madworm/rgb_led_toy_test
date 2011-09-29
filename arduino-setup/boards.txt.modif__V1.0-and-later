@@ -45,7 +45,7 @@ RGBLedRing1.build.variant=eightanaloginputs
 # this makes sure the correct FUSE settings are used
 #
 RGBLedRing2.name=RGB LED RING - ATmega168 / 8MHz RC OSC / optiboot Bootloader
-RGBLedRing2.upload.protocol=stk500
+RGBLedRing2.upload.protocol=arduino
 RGBLedRing2.upload.maximum_size=15872
 RGBLedRing2.upload.speed=115200
 RGBLedRing2.bootloader.low_fuses=0xE2
