@@ -1,6 +1,11 @@
 // ! this example deliberately has reduced functionality !
 // !  please use 'rgb_led_toy_test.pde' as a reference   !
 
+// connect a suitable potentiometer (50...500 kOhm) like so:
+// one of the outer connectors (#1) to +5V
+// the middle connector (#2, wiper) to ANALOG PIN #3 (PC3)
+// the remaining connector (#3) to GND
+
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include "potentiometer_demo.h"
@@ -21,13 +26,13 @@ void setup(void)
 
 	setup_timer1_ctc();	// 7 color PWM mode
 	
-        set_all_rgb(0,1,0);
+        set_all_rgb(0,1,0);	// when you see GREEN, turn the pot to the minimum setting
         delay(2000);
         set_low_limit(&low_limit);
-        set_all_rgb(1,0,0);
+        set_all_rgb(1,0,0);	// when you see RED, turn it to the maximum setting
         delay(2000);
         set_high_limit(&high_limit);
-        set_all_rgb(0,0,0);
+        set_all_rgb(0,0,0);	// after about 2 seconds, turn the pot up and down and observe the effect
 }
 
 void loop(void)
@@ -42,7 +47,7 @@ void loop(void)
     led_number--;
     for(ctr=0; ctr <= led_number; ctr++) {
       led = ctr; // normal direction
-      // led=(8 - ctr) % 8; // reversed direction
+      // led=(8 - ctr) % 8; // reversed direction - disable the line above if you use this one
       set_led_rgb(led,1,0,0);
     }
   }
