@@ -33,14 +33,17 @@ void setup(void)
 void loop(void)
 {
   byte ctr;
+  byte led;
   int adc_value = analogRead(3);
-  byte led_number = (byte)(map(adc_value,low_limit,high_limit,0,9)); // normal
+  byte led_number = (byte)(constrain(map(adc_value,low_limit,high_limit,0,8),0,8));
   set_all_rgb(0,0,0);
 
   if(led_number > 0) {
     led_number--;
     for(ctr=0; ctr <= led_number; ctr++) {
-      set_led_rgb(ctr%8,1,0,0);
+      led = ctr; // normal direction
+      // led=(8 - ctr) % 8; // reversed direction
+      set_led_rgb(led,1,0,0);
     }
   }
 }
