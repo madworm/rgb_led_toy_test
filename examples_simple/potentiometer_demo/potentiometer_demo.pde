@@ -34,10 +34,14 @@ void loop(void)
 {
   byte ctr;
   int adc_value = analogRead(3);
-  byte led_number = (byte)(map(adc_value,low_limit,high_limit,0,7));
+  byte led_number = (byte)(map(adc_value,low_limit,high_limit,0,9)); // normal
   set_all_rgb(0,0,0);
-  for(ctr=0; ctr <= led_number; ctr++) {
-    set_led_rgb(ctr,1,0,0);
+
+  if(led_number > 0) {
+    led_number--;
+    for(ctr=0; ctr <= led_number; ctr++) {
+      set_led_rgb(ctr%8,1,0,0);
+    }
   }
 }
 
