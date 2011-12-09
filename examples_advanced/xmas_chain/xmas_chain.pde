@@ -171,15 +171,15 @@ void twi_white_random_flasher(void)
 			set_all_rgb(0, 0, 0);	// go dark again
 		} else {
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(0);	// go dark
+			Wire.tx(0);	// go dark
 			Wire.endTransmission();
 			delay(10);
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(6);	// go white
+			Wire.tx(6);	// go white
 			Wire.endTransmission();
 			delay(10);
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(0);	// go dark
+			Wire.tx(0);	// go dark
 			Wire.endTransmission();
 		}
 		counter++;
@@ -198,7 +198,7 @@ void twi_7_color_mode_on_all_boards(void)
 			enable_timer1_ctc();	// start PWM mode
 		} else {
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(3);	// start 7 color mode
+			Wire.tx(3);	// start 7 color mode
 			Wire.endTransmission();
 		}
 	}
@@ -214,7 +214,7 @@ void twi_7_color_mode_off_all_boards(void)
 			disable_timer1_ctc();	// stop PWM mode
 		} else {
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(4);	// stop 7 color mode
+			Wire.tx(4);	// stop 7 color mode
 			Wire.endTransmission();
 		}
 	}
@@ -236,11 +236,11 @@ void twi_white_chaser(void)
 			delay(5);
 		} else {
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(6);	// set_all_rgb(1,1,1); // 7 color mode WHITE
+			Wire.tx(6);	// set_all_rgb(1,1,1); // 7 color mode WHITE
 			Wire.endTransmission();
 			delay(5);
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(0);	// all off
+			Wire.tx(0);	// all off
 			Wire.endTransmission();
 			delay(5);
 		}
@@ -254,11 +254,11 @@ void twi_white_chaser(void)
 			delay(5);
 		} else {
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(6);	// set_all_rgb(1,1,1); // 7 color mode WHITE
+			Wire.tx(6);	// set_all_rgb(1,1,1); // 7 color mode WHITE
 			Wire.endTransmission();
 			delay(5);
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(0);	// all off
+			Wire.tx(0);	// all off
 			Wire.endTransmission();
 			delay(5);
 		}
@@ -278,7 +278,7 @@ void twi_off_all_boards(void)
 			do_twi_stuff = 0;
 		} else {
 			Wire.beginTransmission(twi_slave_address);
-			Wire.send(255);	// do_twi_stuff = 0;
+			Wire.tx(255);	// do_twi_stuff = 0;
 			Wire.endTransmission();
 		}
 	}
@@ -463,7 +463,7 @@ void twi_slave_handler(int dummy_rcvd_bytes)
 		if (buff_pos > (__TWI_RX_BUFFER_LENGTH - 1)) {
 			buff_pos = 0;	// just wrap around to 0 again if received too much data. don't care if things get interpreted wrong
 		}
-		twi_rx_buffer[buff_pos] = Wire.receive();
+		twi_rx_buffer[buff_pos] = Wire.rx();
 		buff_pos++;
 	}
 	twi_rx_complete_flag = 1;
@@ -925,16 +925,15 @@ void set_led_hsv(uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
 	hue = hue % 360;
 	uint8_t sector = hue / 60;
 	uint8_t rel_pos = hue - (sector * 60);
-	uint16_t const mmd = 255 * 255;	/* maximum modulation depth */
+	uint16_t const mmd = 65025; // 255 * 255 /* maximum modulation depth */
 	uint16_t top = val * 255;
 	uint16_t bottom = val * (255 - sat);	/* (val*255) - (val*255)*(sat/255) */
-	uint16_t slope = (uint16_t) (val) * (uint16_t) (sat) / 120;	/* dy/dx = (top-bottom)/(2*60) -- val*sat: modulation_depth dy */
+	uint16_t slope = (uint16_t)(val) * (uint16_t)(sat) / 120;	/* dy/dx = (top-bottom)/(2*60) -- val*sat: modulation_depth dy */
 	uint16_t a = bottom + slope * rel_pos;
 	uint16_t b =
-	    bottom + (uint16_t) (val) * (uint16_t) (sat) / 2 + slope * rel_pos;
+	    bottom + (uint16_t)(val) * (uint16_t)(sat) / 2 + slope * rel_pos;
 	uint16_t c = top - slope * rel_pos;
-	uint16_t d =
-	    top - (uint16_t) (val) * (uint16_t) (sat) / 2 - slope * rel_pos;
+	uint16_t d = top - (uint16_t)(val) * (uint16_t)(sat) / 2 - slope * rel_pos;
 
 	uint16_t R, G, B;
 

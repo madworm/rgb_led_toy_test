@@ -3,6 +3,17 @@
  * Normally this could just be in the main source code file
  */
 
+/*
+ *Arduino 1.0 changes / backward compatability regarding Wire.send() --> Wire.write()
+ */
+#if defined(ARDUINO) && ARDUINO >= 100
+#define tx(var) write((byte)(var))
+#define rx() read()
+#else
+#define tx(var) send(var)
+#define rx() receive()
+#endif
+
 enum COLOR_t {
 	BLACK,
 	RED,
