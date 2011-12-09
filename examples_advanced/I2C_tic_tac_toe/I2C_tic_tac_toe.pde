@@ -32,9 +32,9 @@ uint8_t fix_led_numbering[8] = { 3, 5, 4, 6, 7, 0, 1, 2 };	// this is necessary 
 #endif
 
 #define __GAME_STEPS 45
-const uint8_t anim__twi_targets[__GAME_STEPS] PROGMEM = { 0x10, 0x11, 0x14, 0x18, 0x15, 0x13, 0x12, 0x16, 0x17, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x10, 0x13, 0x14, 0x12, 0x18, 0x11, 0x15, 0x16, 0x17, 0x10, 0x14, 0x18, 0x10, 0x14, 0x18, 0x10, 0x14, 0x18, 0x10, 0x14, 0x18, 0x10, 0x14, 0x18, 0x10, 0x14, 0x18 };	// the tic-tac-toe sequence is encoded in this
-const COLOR_t anim__colors[__GAME_STEPS] PROGMEM = { RED, GREEN, RED, GREEN, RED, GREEN, RED, GREEN, RED, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLACK, BLUE, YELLOW, BLUE, YELLOW, BLUE, BLACK, BLACK, BLACK, BLACK, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, WHITE, WHITE, WHITE, WHITE, WHITE, WHITE, BLACK, BLACK, BLACK, WHITE, WHITE, WHITE };	// colors
-const uint8_t anim__delays[__GAME_STEPS] PROGMEM = { 40, 40, 40, 40, 40, 40, 40, 40, 255, 0, 0, 0, 0, 0, 0, 0, 0, 255, 40, 40, 40, 40, 40, 40, 40, 40, 255, 0, 0, 10, 0, 0, 10, 0, 0, 10, 0, 0, 10, 0, 0, 10, 0, 0, 100 };	// delays in ms after each step
+const uint8_t anim__twi_targets[__GAME_STEPS] PROGMEM = { 0x10,  0x11,   0x14,  0x18,   0x15,  0x13,   0x12,  0x16,   0x17,  0x10,   0x11,   0x12,   0x13,   0x14,   0x15,   0x16,   0x17,   0x18,   0x10,  0x13,    0x14,  0x12,    0x18,  0x11,   0x15,   0x16,   0x17,   0x10,   0x14,   0x18,   0x10,   0x14,   0x18,   0x10,   0x14,   0x18,   0x10,   0x14,   0x18,   0x10,   0x14,   0x18,   0x10,   0x14,   0x18 };	// the tic-tac-toe sequence is encoded in this
+const COLOR_t anim__colors[__GAME_STEPS] PROGMEM = {      RED,   GREEN,  RED,   GREEN,  RED,   GREEN,  RED,   GREEN,  RED,   BLACK,  BLACK,  BLACK,  BLACK,  BLACK,  BLACK,  BLACK,  BLACK,  BLACK,  BLUE,  YELLOW,  BLUE,  YELLOW,  BLUE,  BLACK,  BLACK,  BLACK,  BLACK,  WHITE,  WHITE,  WHITE,  BLACK,  BLACK,  BLACK,  WHITE,  WHITE,  WHITE,  WHITE,  WHITE,  WHITE,  BLACK,  BLACK,  BLACK,  WHITE,  WHITE,  WHITE };	// colors
+const uint8_t anim__delays[__GAME_STEPS] PROGMEM = {      40,    40,     40,    40,     40,    40,     40,    40,     255,   0,      0,      0,      0,      0,      0,      0,      0,      255,    40,    40,      40,    40,      40,    40,     40,     40,     255,    0,      0,      10,     0,      0,      10,     0,      0,      10,     0,      0,      10,     0,      0,      10,     0,      0,      100 };	// delays in ms after each step
 
 #define MASTER_TWI_DUMMY_ADDRESS 0x10	// just so the master board knows which part of the animation takes place using its own LEDS!
 #define __GAME_TIMEOUT 1000	// 20 seconds
@@ -74,7 +74,7 @@ void loop(void)
 			PORTB = 0x00;
 		} else {
 			Wire.beginTransmission(anim__target_addr);	// the position of the target board in the 3x3 matrix is encoded in its address
-			Wire.send(anim__color);
+			Wire.tx(anim__color);
 			Wire.endTransmission();
 		}
 		__delay_ms((uint16_t) (__DELAY_SCALER * anim__delay));
@@ -94,7 +94,7 @@ void loop(void)
 void slave_handler(int dummy_rcvd_bytes)
 {
 	uint8_t tmp = 0;
-	tmp = Wire.receive();	// get the incoming data (not the address, that step is abstracted away in the library)
+	tmp = Wire.rx();	// get the incoming data (not the address, that step is abstracted away in the library)
 	color_off(WHITE);	// turn everything off (anodes)
 	PORTB = 0xFF;		// turn everything off (cathodes)
 	color_on((COLOR_t) (tmp));
@@ -191,7 +191,7 @@ void clear_game(void)
 			PORTB = 0xFF;	// turn everything off (cathodes)
 		} else {
 			Wire.beginTransmission(anim__target_addr);	// the position of the target board in the 3x3 matrix is encoded in its address
-			Wire.send(anim__color);
+			Wire.tx(anim__color);
 			Wire.endTransmission();
 		}
 	}
