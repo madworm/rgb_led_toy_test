@@ -1,20 +1,6 @@
 /*
- * 2010-08-19 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
+ * 2011-12-10 (YYYY-MM-DD) - robert:aT:spitzenpfeil_d*t:org - RGB_LED_TOY_TEST
  */
-
- /*
-  * change log:
-  *
-  * 2010-08-21 added true 7 simultaneous color mode. brighter than true RGB mode.
-  *
-  * 2010-08-19 added wobble3() for 2 color animations in 'high brightness' mode. kinda works.
-  *
-  * 2010-07-26 removed all the OSCCAL code, it just doesn't work good enough (drift).
-  *            Next time I'll use a quartz crystal in SMD format...
-  *            Now the syncing is done manually in functions after each "step" or "time slice",
-  *            but NOT in PWM mode as it gets too slow.
-  *
-  */
 
 /*
  * The boards run with the internal oscillator. To stay in sync the MASTER sends a sync pulse
@@ -88,9 +74,10 @@ uint8_t brightness_blue[8];	/* memory for BLUE LEDs */
 
 /* all of the volatile variables will be set in setup_timer1_ctc() */
 volatile uint8_t rgb_mode;	/* 0 for multiplexed TRUE-RGB (dim), 1 for multiplexed 7 color RGB (brighter and just 7 simultaneous colors including white) */
-volatile uint8_t max_brightness;
-#define __TRUE_RGB_OCR1A 0x040;	// using a prescaler of 1024
+
 #define __7_COLOR_OCR1A 0x0035;	// using a prescaler of 256
+#define __color_bit_depth 6
+#define __max_brightness 63	// ( (2^__color_bit_depth) - 1 )
 
 //#define DOTCORR  /* enable/disable dot correction - only valid for true RGB PWM mode ! */
 
@@ -361,8 +348,8 @@ void more_light_hack_test(void)
 }
 
 void
-rotating_bar(enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
-	     uint16_t delay_time)
+rotating_bar(enum COLOR_t led_color, enum DIRECTION_t direction,
+	     uint8_t times, uint16_t delay_time)
 {
 	uint8_t ctr1;
 	uint8_t ctr2;
@@ -397,8 +384,8 @@ rotating_bar(enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
 }
 
 void
-rotating_dot(enum COLOR_t led_color, enum DIRECTION_t direction, uint8_t times,
-	     uint16_t delay_time)
+rotating_dot(enum COLOR_t led_color, enum DIRECTION_t direction,
+	     uint8_t times, uint16_t delay_time)
 {
 	uint8_t ctr1;
 	uint8_t ctr2;
@@ -631,14 +618,14 @@ void fader(void)
 	uint8_t ctr1;
 	uint8_t led;
 
-	for (ctr1 = 0; ctr1 <= max_brightness; ctr1++) {
+	for (ctr1 = 0; ctr1 <= __max_brightness; ctr1++) {
 		for (led = 0; led <= (8 - 1); led++) {
 			set_led_rgb(led, ctr1, ctr1, ctr1);
 		}
 		delay(__fade_delay);
 	}
 
-	for (ctr1 = max_brightness; (ctr1 >= 0) & (ctr1 != 255); ctr1--) {
+	for (ctr1 = __max_brightness; (ctr1 >= 0) & (ctr1 != 255); ctr1--) {
 		for (led = 0; led <= (8 - 1); led++) {
 			set_led_rgb(led, ctr1, ctr1, ctr1);
 		}
@@ -675,7 +662,7 @@ void set_led_red(uint8_t led, uint8_t red)
 #ifdef DOTCORR
 	int8_t dotcorr =
 	    (int8_t) (pgm_read_byte(&dotcorr_red[led])) * red /
-	    max_brightness;
+	    __max_brightness;
 	uint8_t value;
 	if (red + dotcorr < 0) {
 		value = 0;
@@ -693,7 +680,7 @@ void set_led_green(uint8_t led, uint8_t green)
 #ifdef DOTCORR
 	int8_t dotcorr =
 	    (int8_t) (pgm_read_byte(&dotcorr_green[led])) * green /
-	    max_brightness;
+	    __max_brightness;
 	uint8_t value;
 	if (green + dotcorr < 0) {
 		value = 0;
@@ -711,7 +698,7 @@ void set_led_blue(uint8_t led, uint8_t blue)
 #ifdef DOTCORR
 	int8_t dotcorr =
 	    (int8_t) (pgm_read_byte(&dotcorr_blue[led])) * blue /
-	    max_brightness;
+	    __max_brightness;
 	uint8_t value;
 	if (blue + dotcorr < 0) {
 		value = 0;
@@ -775,7 +762,7 @@ void set_led_hsv(uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
 	hue = hue % 360;
 	uint8_t sector = hue / 60;
 	uint8_t rel_pos = hue - (sector * 60);
-	uint16_t const mmd = 255 * 255;	/* maximum modulation depth */
+	uint16_t const mmd = 65025;	// 255 * 255 /* maximum modulation depth */
 	uint16_t top = val * 255;
 	uint16_t bottom = val * (255 - sat);	/* (val*255) - (val*255)*(sat/255) */
 	uint16_t slope = (uint16_t) (val) * (uint16_t) (sat) / 120;	/* dy/dx = (top-bottom)/(2*60) -- val*sat: modulation_depth dy */
@@ -814,7 +801,7 @@ void set_led_hsv(uint8_t led, uint16_t hue, uint8_t sat, uint8_t val)
 		B = d;
 	}
 
-	uint16_t scale_factor = mmd / max_brightness;
+	uint16_t scale_factor = mmd / __max_brightness;
 
 	R = (uint8_t) (R / scale_factor);
 	G = (uint8_t) (G / scale_factor);
@@ -845,9 +832,9 @@ void setup_timer1_ctc(uint8_t mode)
 	cli();			/* disable all interrupts while messing with the register setup */
 	switch (mode) {
 	case 0:		/* multiplexed TRUE-RGB PWM mode (quite dim) */
-		/* set prescaler to 1024 */
-		TCCR1B |= (_BV(CS10) | _BV(CS12));
-		TCCR1B &= ~_BV(CS11);
+		/* set prescaler to 256 */
+		TCCR1B |= (_BV(CS12));
+		TCCR1B &= ~(_BV(CS11) | _BV(CS10));
 		/* set WGM mode 4: CTC using OCR1A */
 		TCCR1A &= ~(_BV(WGM10) | _BV(WGM11));
 		TCCR1B |= _BV(WGM12);
@@ -856,15 +843,14 @@ void setup_timer1_ctc(uint8_t mode)
 		TCCR1A &=
 		    ~(_BV(COM1A1) | _BV(COM1A0) | _BV(COM1B1) | _BV(COM1B0));
 		/* set top value for TCNT1 */
-		OCR1A = __TRUE_RGB_OCR1A;
+		OCR1A = 10;
 		/* rest */
 		rgb_mode = mode;
-		max_brightness = 64;	
 		break;
 	case 1:		/* multiplexed 7 color RGB mode (brighter) */
-		/* set prescaler to 256 */
-		TCCR1B &= ~(_BV(CS11) | _BV(CS10));
-		TCCR1B |= _BV(CS12);
+		/* set prescaler to 1024 */
+		TCCR1B &= ~(_BV(CS12) | _BV(CS10));
+		TCCR1B |= _BV(CS11);
 		/* set WGM mode 4: CTC using OCR1A */
 		TCCR1A &= ~(_BV(WGM10) | _BV(WGM11));
 		TCCR1B |= _BV(WGM12);
@@ -902,54 +888,68 @@ void disable_timer1_ctc(void)
 
 ISR(TIMER1_COMPA_vect)
 {				/* Framebuffer interrupt routine */
-	uint8_t led;
+	static uint8_t led = 0;
+
 	switch (rgb_mode) {
 	case 0:
-		uint8_t cycle;
-		for (cycle = 0; cycle <= (max_brightness -1); cycle++) {
-			uint8_t led;
-			for (led = 0; led <= (8 - 1); led++) {
 
-				PORTB = 0xFF;	// all cathodes HIGH --> OFF
-				PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
-				PORTB &= ~_BV(fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
+		static uint16_t bitmask = 0x0001;
+		uint8_t OCR1A_next;
 
-				if (cycle < brightness_red[led]) {
-					PORTD |= RED_Ax;
-				}
-				if (cycle < brightness_green[led]) {
-					PORTD |= GREEN_Ax;
-				}
-				if (cycle < brightness_blue[led]) {
-					PORTD |= BLUE_Ax;
-				}
-			}
+		PORTB = 0xFF;	// all cathodes HIGH --> OFF
+		PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
+		PORTB &= ~_BV(fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
+
+		if (brightness_red[led] & bitmask) {
+			PORTD |= RED_Ax;
+		}
+		if (brightness_green[led] & bitmask) {
+			PORTD |= GREEN_Ax;
+		}
+		if (brightness_blue[led] & bitmask) {
+			PORTD |= BLUE_Ax;
 		}
 
+		OCR1A_next = bitmask;
+		bitmask = bitmask << 1;
+
+		if (bitmask == _BV(__color_bit_depth + 1)) {
+			led++;
+			bitmask = 0x0001;
+			OCR1A_next = 1;
+		}
+
+		if (led == 8) {
+			led = 0;
+		}
+
+		OCR1A = OCR1A_next;	// when to run next time
+		TCNT1 = 0;	// clear timer to compensate for code runtime above
+		TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
 		break;
 	case 1:
-		for (led = 0; led <= (8 - 1); led++) {
+		PORTB = 0xFF;	// all cathodes HIGH --> OFF
+		PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
+		PORTB &= ~_BV(fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
 
-			PORTB = 0xFF;	// all cathodes HIGH --> OFF
-			PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
-			PORTB &= ~_BV(fix_led_numbering[led]);	// only turn on the LED that we deal with right now (current sink, on when zero)
+		if (brightness_red[led] > 0) {
+			PORTD |= RED_Ax;
+		}
+		if (brightness_green[led] > 0) {
+			PORTD |= GREEN_Ax;
+		}
+		if (brightness_blue[led] > 0) {
+			PORTD |= BLUE_Ax;
+		}
 
-			if (brightness_red[led] > 0) {
-				PORTD |= RED_Ax;
-			}
-			if (brightness_green[led] > 0) {
-				PORTD |= GREEN_Ax;
-			}
-			if (brightness_blue[led] > 0) {
-				PORTD |= BLUE_Ax;
-			}
-			_delay_us(200);	// pov delay
+		led++;
+		if (led == 8) {
+			led = 0;
 		}
 		break;
 	default:
 		break;
 	}
-	PORTB = 0xFF;		// all cathodes HIGH --> OFF
 }
 
 /*

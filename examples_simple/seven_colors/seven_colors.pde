@@ -108,9 +108,9 @@ void setup_timer1_ctc(void)
 	//
 	byte _sreg = SREG;	/* save SREG */
 	cli();			/* disable all interrupts while messing with the register setup */
-	/* set prescaler to 256 */
-	TCCR1B &= ~(_BV(CS11) | _BV(CS10));
-	TCCR1B |= _BV(CS12);
+	/* set prescaler to 1024 */
+	TCCR1B &= ~(_BV(CS12) | _BV(CS10));
+	TCCR1B |= _BV(CS11);	
 	/* set WGM mode 4: CTC using OCR1A */
 	TCCR1A &= ~(_BV(WGM10) | _BV(WGM11));
 	TCCR1B |= _BV(WGM12);
@@ -127,23 +127,24 @@ void setup_timer1_ctc(void)
 
 ISR(TIMER1_COMPA_vect)
 {				/* Framebuffer interrupt routine */
-	uint8_t led;
-	for (led = 0; led <= (8 - 1); led++) {
+	static uint8_t led = 0;
 
-		PORTB = 0xFF;	// all cathodes HIGH --> OFF
-		PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
-		PORTB &= ~_BV(led);	// only turn on the LED that we deal with right now (current sink, on when zero)
-
-		if (brightness_red[led] > 0) {
-			PORTD |= RED_Ax;
-		}
-		if (brightness_green[led] > 0) {
-			PORTD |= GREEN_Ax;
-		}
-		if (brightness_blue[led] > 0) {
-			PORTD |= BLUE_Ax;
-		}
-		_delay_us(200);	// pov delay controls overall brightness (0-200)
-	}
 	PORTB = 0xFF;		// all cathodes HIGH --> OFF
+	PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// all relevant anodes LOW --> OFF
+	PORTB &= ~_BV(led);	// only turn on the LED that we deal with right now (current sink, on when zero)
+
+	if (brightness_red[led] > 0) {
+		PORTD |= RED_Ax;
+	}
+	if (brightness_green[led] > 0) {
+		PORTD |= GREEN_Ax;
+	}
+	if (brightness_blue[led] > 0) {
+		PORTD |= BLUE_Ax;
+	}
+
+	led++;
+	if (led == 8) {
+		led = 0;
+	}
 }
