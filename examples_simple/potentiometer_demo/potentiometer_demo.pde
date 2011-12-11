@@ -55,7 +55,6 @@ void loop(void)
 
 void set_low_limit(int * low_limit_ptr) {
   *low_limit_ptr = analogRead(3);
-  byte ctr;
 }
 
 void set_high_limit(int * high_limit_ptr) {
