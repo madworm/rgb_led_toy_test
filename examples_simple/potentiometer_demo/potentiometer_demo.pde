@@ -6,7 +6,6 @@
 // the middle connector (#2, wiper) to ANALOG PIN #3 (PC3)
 // the remaining connector (#3) to GND
 
-#include <util/delay.h>
 #include <avr/interrupt.h>
 #include "potentiometer_demo.h"
 
