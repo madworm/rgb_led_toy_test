@@ -92,7 +92,7 @@ void setup(void)
         DDRD |= _BV(PD1); // PD1 as OUTPUT
         PORTD &= ~_BV(PD1);  // PD1 LOW
         DDRC |= (_BV(PC2) | _BV(PC3)); // PC2-3 as OUTPUT
-        shiftOut(16,17,MSBFIRST,'U');
+        shiftOut(16,17,MSBFIRST,0x55);
         PORTD |= _BV(PD1); // PD1 HIGH
         DDRD &= ~_BV(PD1); // PD1 as input again
         */
