@@ -82,9 +82,24 @@ void setup(void)
 	DDRD |= (RED_Ax | GREEN_Ax | BLUE_Ax);	// set relevant pins as outputs
 	PORTD &= ~(RED_Ax | GREEN_Ax | BLUE_Ax);	// relevant pins LOW --> anodes LOW --> LEDs off
 
+        /*
+        // ignore this ;-)
+        // turn UART off - it overrides normal port functions (arduino pins 0,1)
+        UCSR0A = 0;
+        UCSR0B = 0;
+        UCSR0C = 0;
+
+        DDRD |= _BV(PD1); // PD1 as OUTPUT
+        PORTD &= ~_BV(PD1);  // PD1 LOW
+        DDRC |= (_BV(PC2) | _BV(PC3)); // PC2-3 as OUTPUT
+        shiftOut(16,17,MSBFIRST,'U');
+        PORTD |= _BV(PD1); // PD1 HIGH
+        DDRD &= ~_BV(PD1); // PD1 as input again
+        */
+        
 	DDRC &= ~(_BV(PC2) | _BV(PC3) | _BV(PC4) | _BV(PC5));	// PC2-5 is an input
 	PORTC |= (_BV(PC4));	// internal pull-up on
-
+        
 	randomSeed(__RANDOM_SEED);
 }
 
