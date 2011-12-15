@@ -94,12 +94,9 @@ void setup(void)
         DDRC |= (_BV(PC2) | _BV(PC3)); // PC2-3 as OUTPUT
         shiftOut(16,17,MSBFIRST,0x55);
         PORTD |= _BV(PD1); // PD1 HIGH
-        DDRD &= ~_BV(PD1); // PD1 as input again
+        PORTC &= ~(_BV(PC2) | _BV(PC3)); // keep 'SCK' and 'SDI' LOW (SPI data/clock), don't let them float --> strange errors
         */
-        
-	DDRC &= ~(_BV(PC2) | _BV(PC3) | _BV(PC4) | _BV(PC5));	// PC2-5 is an input
-	PORTC |= (_BV(PC4));	// internal pull-up on
-        
+       
 	randomSeed(__RANDOM_SEED);
 }
 
