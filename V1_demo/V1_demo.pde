@@ -66,7 +66,7 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
-#include "rgb_led_toy_test.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
+#include "V1_demo.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 
 uint8_t brightness_red[8];	/* memory for RED LEDs */
 uint8_t brightness_green[8];	/* memory for GREEN LEDs */
