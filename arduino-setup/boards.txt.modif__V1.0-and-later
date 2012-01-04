@@ -7,13 +7,13 @@
 #
 # to activate this board, select it and use:
 #
-# 'Burn Bootloader' - 'w/ USBtinyISP' just once
+# 'Burn Bootloader' just once
+# Make sure to select your programmer type in the menu!
 # this makes sure the correct FUSE settings are used
 #
-RGBLedRing1.name=RGB LED RING - ATmega168 / 8MHz RC OSC / USBtiny
+RGBLedRing1.name=RGB LED RING - ATmega168 / 8MHz RC OSC / ISP
 RGBLedRing1.upload.maximum_size=16384
 RGBLedRing1.upload.speed=115200
-RGBLedRing1.upload.using=arduino:usbtinyisp
 RGBLedRing1.bootloader.low_fuses=0xE2
 RGBLedRing1.bootloader.high_fuses=0xDD
 RGBLedRing1.bootloader.extended_fuses=0x05
@@ -41,7 +41,8 @@ RGBLedRing1.build.variant=eightanaloginputs
 #
 # to activate this board, select it and use:
 #
-# 'Burn Bootloader' - 'w/ USBtinyISP' just once
+# 'Burn Bootloader' just once
+# Make sure to select your programmer type in the menu!
 # this makes sure the correct FUSE settings are used
 #
 RGBLedRing2.name=RGB LED RING - ATmega168 / 8MHz RC OSC / optiboot Bootloader
