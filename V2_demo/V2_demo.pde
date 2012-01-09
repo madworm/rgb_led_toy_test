@@ -492,9 +492,9 @@ void setup_timer1_ctc(void)
 	//
 	uint8_t _sreg = SREG;	/* save SREG */
 	cli();			/* disable all interrupts while messing with the register setup */
-	/* set prescaler to 256 */
-	TCCR1B |= (_BV(CS12));
-	TCCR1B &= ~(_BV(CS11) | _BV(CS10));
+	/* set prescaler to 64 */
+	TCCR1B |= (_BV(CS11) | _BV(CS10));
+	TCCR1B &= ~(_BV(CS12));
 	/* set WGM mode 4: CTC using OCR1A */
 	TCCR1A &= ~(_BV(WGM10) | _BV(WGM11));
 	TCCR1B |= _BV(WGM12);
