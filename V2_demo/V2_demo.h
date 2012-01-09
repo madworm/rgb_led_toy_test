@@ -11,7 +11,6 @@
   #define DRIVER_OFF PORTB |= _BV(PB6)
   #define LATCH_LOW  PORTB &= ~_BV(PB2)
   #define LATCH_HIGH PORTB |= _BV(PB2)
-  uint8_t fix_led_numbering[8] = {0,1,2,3,4,5,6,7};
 #endif
 
 enum DIRECTION_t {
