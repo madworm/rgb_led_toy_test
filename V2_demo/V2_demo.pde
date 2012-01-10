@@ -2,7 +2,8 @@
  * 2012 - robert:aT:spitzenpfeil_d*t:org - RGB_LED_Ring Demo
  */
 
-#define V20alpha
+#define V20beta
+//#define V20alpha
 
 #ifdef V20alpha
 #define DOTCORR
@@ -36,6 +37,11 @@ void setup(void)
 	DDRD |= _BV(RED_GATE) | _BV(GREEN_GATE) | _BV(BLUE_GATE);	// P-MOSFET gates as outputs
         DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6); // set LATCH, MOSI, SCK, OE as outputs
 #endif
+
+#ifdef V20beta
+        DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6); // set LATCH, MOSI, SCK, OE as outputs
+#endif
+
 	randomSeed(555);
         setup_hardware_spi();
 	setup_timer1_ctc();	/* set timer1 to normal mode (16bit counter) and prescaler. enable/disable via extra functions! */
@@ -580,6 +586,46 @@ ISR(TIMER1_COMPA_vect)
 	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
 
+#endif
+
+#ifdef V20beta
+	uint8_t led = 0;
+	uint8_t bcm_red = 0;
+        uint8_t bcm_green = 0;
+        uint8_t bcm_blue = 0;
+	uint8_t OCR1A_next;
+
+	static uint16_t bitmask = 0x0001;
+
+	for (led = 0; led <= 7; led++) {
+		if (brightness_red[led] & bitmask) {
+			bcm_red |= _BV(led);	// bit high --> on
+		}
+		if (brightness_green[led] & bitmask) {
+			bcm_green |= _BV(led);	// bit high --> on
+		}
+		if (brightness_blue[led] & bitmask) {
+			bcm_blue |= _BV(led);	// bit high --> on
+		}
+	}
+
+	LATCH_LOW;
+	spi_transfer(bcm_red);
+	spi_transfer(bcm_green);
+	spi_transfer(bcm_blue);
+	LATCH_HIGH;
+
+	OCR1A_next = bitmask;
+	bitmask = bitmask << 1;
+
+	if (bitmask == _BV(__color_bit_depth + 1)) {
+		bitmask = 0x0001;
+		OCR1A_next = 1;
+	}
+
+	OCR1A = OCR1A_next;	// when to run next time
+	TCNT1 = 0;		// clear timer to compensate for code runtime above
+	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
 #endif
         DRIVER_ON;
 }
