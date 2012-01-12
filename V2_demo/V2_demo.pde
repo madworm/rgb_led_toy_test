@@ -560,7 +560,7 @@ ISR(TIMER1_COMPA_vect)
 		PORTD |= _BV(GREEN_GATE);
 		PORTD &= ~_BV(RED_GATE);	// gate low --> on
 		for (led = 0; led <= 7; led++) {
-			if (brightness__red_read[led] & bitmask) {
+			if (brightness_red_read[led] & bitmask) {
 				bcm_data |= _BV(led);	// bit high --> on
 			}
 		}
