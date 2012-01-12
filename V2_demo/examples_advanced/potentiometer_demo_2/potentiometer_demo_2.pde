@@ -1,5 +1,5 @@
 // ! this example deliberately has reduced functionality !
-// !  please use 'rgb_led_toy_test.pde' as a reference   !
+// !  please use 'V2_demo.pde' as a reference   !
 
 // connect a suitable potentiometer (50...500 kOhm) like so:
 // one of the outer connectors (#1) to +5V

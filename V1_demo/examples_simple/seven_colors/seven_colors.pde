@@ -1,5 +1,5 @@
 // ! this example deliberately has reduced functionality !
-// !  please use 'rgb_led_toy_test.pde' as a reference   !
+// !  please use 'V1_demo.pde' as a reference   !
 
 #include <util/delay.h>
 #include <avr/interrupt.h>
