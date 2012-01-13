@@ -661,6 +661,10 @@ ISR(TIMER1_COMPA_vect)
 	}
 
 	LATCH_LOW;
+        //
+	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
+	// correct for the kind of RGB LED you use.
+	//
 	spi_transfer(bcm_blue);
 	spi_transfer(bcm_green);
 	spi_transfer(bcm_red);
