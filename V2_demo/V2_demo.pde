@@ -14,21 +14,25 @@
 #include <avr/interrupt.h>
 #include "V2_demo.h"		// needed to make the 'enum' work with Arduino IDE (and other things)
 
-uint8_t brightness_a_red[8];	/* memory for RED LEDs */
-uint8_t brightness_a_green[8];	/* memory for GREEN LEDs */
-uint8_t brightness_a_blue[8];	/* memory for BLUE LEDs */
+uint8_t brightness_red[8];	/* memory for RED LEDs */
+uint8_t brightness_green[8];	/* memory for GREEN LEDs */
+uint8_t brightness_blue[8];	/* memory for BLUE LEDs */
 
-uint8_t brightness_b_red[8];	/* memory for RED LEDs */
-uint8_t brightness_b_green[8];	/* memory for GREEN LEDs */
-uint8_t brightness_b_blue[8];	/* memory for BLUE LEDs */
+uint8_t sbcm_red_a[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t sbcm_green_a[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t sbcm_blue_a[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-uint8_t *brightness_red_read = brightness_a_red;
-uint8_t *brightness_green_read = brightness_a_green;
-uint8_t *brightness_blue_read = brightness_a_blue;
+uint8_t sbcm_red_b[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t sbcm_green_b[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t sbcm_blue_b[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-uint8_t *brightness_red_write = brightness_b_red;
-uint8_t *brightness_green_write = brightness_b_green;
-uint8_t *brightness_blue_write = brightness_b_blue;
+uint8_t which_buffer = 0;	// 0 for sbcm_a, 1 for sbcm_b
+
+uint8_t *sbcm_red_live = sbcm_red_a;
+uint8_t *sbcm_green_live = sbcm_green_a;
+uint8_t *sbcm_blue_live = sbcm_blue_a;
+
+uint8_t bit_weight[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
 
 volatile uint8_t want_buffer_flip;
 
@@ -64,7 +68,7 @@ void setup(void)
 
 void loop(void)
 {
-	uint16_t ctr;
+	uint16_t ctr = 0;
 
 	for (ctr = 0; ctr < 3; ctr++) {
 		fader();
@@ -350,9 +354,9 @@ void set_led_red(uint8_t led, uint8_t red, uint8_t buffer_flip)
 	} else {
 		value = red + dotcorr;
 	}
-	brightness_red_write[led] = value;
+	brightness_red[led] = value;
 #else
-	brightness_red_write[led] = red;
+	brightness_red[led] = red;
 #endif
 	if (buffer_flip == 1) {
 		flip_buffers();
@@ -370,9 +374,9 @@ void set_led_green(uint8_t led, uint8_t green, uint8_t buffer_flip)
 	} else {
 		value = green + dotcorr;
 	}
-	brightness_green_write[led] = value;
+	brightness_green[led] = value;
 #else
-	brightness_green_write[led] = green;
+	brightness_green[led] = green;
 #endif
 	if (buffer_flip == 1) {
 		flip_buffers();
@@ -390,9 +394,9 @@ void set_led_blue(uint8_t led, uint8_t blue, uint8_t buffer_flip)
 	} else {
 		value = blue + dotcorr;
 	}
-	brightness_blue_write[led] = value;
+	brightness_blue[led] = value;
 #else
-	brightness_blue_write[led] = blue;
+	brightness_blue[led] = blue;
 #endif
 	if (buffer_flip == 1) {
 		flip_buffers();
@@ -549,9 +553,19 @@ void setup_timer1_ctc(void)
 	//
 	uint8_t _sreg = SREG;	/* save SREG */
 	cli();			/* disable all interrupts while messing with the register setup */
-	/* set prescaler to 256 */
-	TCCR1B |= (_BV(CS12));
-	TCCR1B &= ~(_BV(CS11) | _BV(CS10));
+
+#ifdef V20beta
+	/* set prescaler to 64 */
+	TCCR1B |= (_BV(CS11) | _BV(CS10));
+	TCCR1B &= ~(_BV(CS12));
+#endif
+
+#ifdef V20alpha
+	/* set prescaler to 64 */
+	TCCR1B |= (_BV(CS11) | _BV(CS10));
+	TCCR1B &= ~(_BV(CS12));
+#endif
+
 	/* set WGM mode 4: CTC using OCR1A */
 	TCCR1A &= ~(_BV(WGM10) | _BV(WGM11));
 	TCCR1B |= _BV(WGM12);
@@ -570,44 +584,29 @@ ISR(TIMER1_COMPA_vect)
 {
 	DRIVER_OFF;
 #ifdef V20alpha
-
-	uint8_t led = 0;
+	static uint8_t bcm_ctr = 0;
+	static uint8_t color = 0;
 	uint8_t bcm_data = 0;
 	uint8_t OCR1A_next;
-
-	static uint8_t color = 0;
-	static uint16_t bitmask = 0x0001;
 
 	switch (color) {
 	case 0:
 		PORTD |= _BV(BLUE_GATE);
 		PORTD |= _BV(GREEN_GATE);
 		PORTD &= ~_BV(RED_GATE);	// gate low --> on
-		for (led = 0; led <= 7; led++) {
-			if (brightness_red_read[led] & bitmask) {
-				bcm_data |= _BV(led);	// bit high --> on
-			}
-		}
+		bcm_data = sbcm_red_live[bcm_ctr];
 		break;
 	case 1:
 		PORTD |= _BV(BLUE_GATE);
 		PORTD |= _BV(RED_GATE);
 		PORTD &= ~_BV(GREEN_GATE);	// gate low --> on
-		for (led = 0; led <= 7; led++) {
-			if (brightness_green_read[led] & bitmask) {
-				bcm_data |= _BV(led);	// bit high --> on
-			}
-		}
+		bcm_data = sbcm_green_live[bcm_ctr];
 		break;
 	case 2:
 		PORTD |= _BV(RED_GATE);
 		PORTD |= _BV(GREEN_GATE);
 		PORTD &= ~_BV(BLUE_GATE);	// gate low --> on
-		for (led = 0; led <= 7; led++) {
-			if (brightness_blue_read[led] & bitmask) {
-				bcm_data |= _BV(led);	// bit high --> on
-			}
-		}
+		bcm_data = sbcm_blue_live[bcm_ctr];
 		break;
 	default:
 		PORTD &= ~_BV(RED_GATE);
@@ -620,12 +619,11 @@ ISR(TIMER1_COMPA_vect)
 	spi_transfer(bcm_data);
 	LATCH_HIGH;
 
-	OCR1A_next = bitmask;
-	bitmask = bitmask << 1;
+	OCR1A_next = bit_weight[bcm_ctr++];
 
-	if (bitmask == _BV(__color_bit_depth + 1)) {
+	if (bcm_ctr == __color_bit_depth + 1) {
+		bcm_ctr = 0;
 		color++;
-		bitmask = 0x0001;
 		OCR1A_next = 1;
 	}
 
@@ -636,45 +634,26 @@ ISR(TIMER1_COMPA_vect)
 	OCR1A = OCR1A_next;	// when to run next time
 	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
-
 #endif
 
 #ifdef V20beta
-	uint8_t led = 0;
-	uint8_t bcm_red = 0;
-	uint8_t bcm_green = 0;
-	uint8_t bcm_blue = 0;
 	uint8_t OCR1A_next;
-
-	static uint16_t bitmask = 0x0001;
-
-	for (led = 0; led <= 7; led++) {
-		if (brightness_red_read[led] & bitmask) {
-			bcm_red |= _BV(led);	// bit high --> on
-		}
-		if (brightness_green_read[led] & bitmask) {
-			bcm_green |= _BV(led);	// bit high --> on
-		}
-		if (brightness_blue_read[led] & bitmask) {
-			bcm_blue |= _BV(led);	// bit high --> on
-		}
-	}
+	static uint8_t bcm_ctr = 0;
 
 	LATCH_LOW;
-        //
+	//
 	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
 	// correct for the kind of RGB LED you use.
 	//
-	spi_transfer(bcm_blue);
-	spi_transfer(bcm_green);
-	spi_transfer(bcm_red);
+	spi_transfer(sbcm_blue_live[bcm_ctr]);
+	spi_transfer(sbcm_green_live[bcm_ctr]);
+	spi_transfer(sbcm_red_live[bcm_ctr]);
 	LATCH_HIGH;
 
-	OCR1A_next = bitmask;
-	bitmask = bitmask << 1;
+	OCR1A_next = bit_weight[bcm_ctr++];	// post increment !!
 
-	if (bitmask == _BV(__color_bit_depth + 1)) {
-		bitmask = 0x0001;
+	if (bcm_ctr == __color_bit_depth + 1) {
+		bcm_ctr = 0;
 		OCR1A_next = 1;
 	}
 
@@ -688,8 +667,63 @@ ISR(TIMER1_COMPA_vect)
 
 void flip_buffers(void)
 {
-	uint8_t *tmp;
-	uint8_t ctr;
+	// first rebuild the bcm array
+
+	uint8_t read_ctr;
+	uint8_t write_ctr;
+	uint8_t tmp_write;
+	uint8_t tmp_read;
+
+	uint8_t *sbcm_red_write_to;
+	uint8_t *sbcm_green_write_to;
+	uint8_t *sbcm_blue_write_to;
+
+	switch (which_buffer) {	// write to the buffer that is currently _not_ live
+	case 0:
+		sbcm_red_write_to = sbcm_red_b;
+		sbcm_green_write_to = sbcm_green_b;
+		sbcm_blue_write_to = sbcm_blue_b;
+		break;
+	case 1:
+		sbcm_red_write_to = sbcm_red_a;
+		sbcm_green_write_to = sbcm_green_a;
+		sbcm_blue_write_to = sbcm_blue_a;
+		break;
+	default:
+		break;
+	}
+
+	// the following is essentially a 90° matrix rotation
+	//
+	// the columns red[0].bit0, red[1].bit0, red[2].bit0 red[3].bit0 ...
+	// are written to
+	// sbcm_red[0].bit0, sbcm_red[0].bit1, sbcm_red[0].bit2, sbmc_red[0].bit3 ...
+
+	for (write_ctr = 0; write_ctr <= 7; write_ctr++) {
+
+		tmp_write = _BV(write_ctr);
+
+		sbcm_red_write_to[write_ctr] = 0;
+		sbcm_green_write_to[write_ctr] = 0;
+		sbcm_blue_write_to[write_ctr] = 0;
+
+		for (read_ctr = 0; read_ctr <= 7; read_ctr++) {
+
+			tmp_read = _BV(read_ctr);
+
+			if (brightness_red[read_ctr] & tmp_write) {
+				sbcm_red_write_to[write_ctr] |= tmp_read;
+			}
+			if (brightness_green[read_ctr] & tmp_write) {
+				sbcm_green_write_to[write_ctr] |= tmp_read;
+			}
+			if (brightness_blue[read_ctr] & tmp_write) {
+				sbcm_blue_write_to[write_ctr] |= tmp_read;
+			}
+		}
+	}
+
+	// now signal that we want to change the live buffer
 
 	want_buffer_flip = 1;	// set the flag to 1
 
@@ -699,24 +733,20 @@ void flip_buffers(void)
 
 	cli();
 
-	tmp = brightness_red_read;
-	brightness_red_read = brightness_red_write;
-	brightness_red_write = tmp;
-
-	tmp = brightness_green_read;
-	brightness_green_read = brightness_green_write;
-	brightness_green_write = tmp;
-
-	tmp = brightness_blue_read;
-	brightness_blue_read = brightness_blue_write;
-	brightness_blue_write = tmp;
-
-	// now copy the content of the buffer that is displayed to the one that is written to
-	// if this is not done, some content will be missing after the next buffer flip
-	for (ctr = 0; ctr <= 7; ctr++) {
-		brightness_red_write[ctr] = brightness_red_read[ctr];
-		brightness_green_write[ctr] = brightness_green_read[ctr];
-		brightness_blue_write[ctr] = brightness_blue_read[ctr];
+	switch (which_buffer) {
+	case 0:
+		sbcm_red_live = sbcm_red_b;
+		sbcm_green_live = sbcm_green_b;
+		sbcm_blue_live = sbcm_blue_b;
+		which_buffer = 1;
+		break;
+	case 1:
+		sbcm_red_live = sbcm_red_a;
+		sbcm_green_live = sbcm_green_a;
+		sbcm_blue_live = sbcm_blue_a;
+		which_buffer = 0;
+	default:
+		break;
 	}
 
 	TCNT1 = 0;		// clear timer to compensate for code runtime above
@@ -753,11 +783,40 @@ void setup_hardware_spi(void)
 	SPSR |= _BV(SPI2X);
 }
 
-uint8_t spi_transfer(uint8_t data)
+inline uint8_t spi_transfer(uint8_t data)
 {
 	SPDR = data;		// Start the transmission
 	while (!(SPSR & _BV(SPIF)))	// Wait the end of the transmission
 	{
 	};
 	return SPDR;		// return the received byte. (we don't need that here)
+}
+
+void level_debug(void)
+{
+	uint8_t read = 0;
+	uint8_t ctr = 0;
+
+	Serial.begin(9600);
+
+	while (1) {
+		if (Serial.available()) {
+			switch (read = Serial.read()) {
+			case '+':
+				if (ctr < 63) {
+					ctr++;
+				}
+				break;
+			case '-':
+				if (ctr > 0) {
+					ctr--;
+				}
+				break;
+			default:
+				break;
+			}
+			Serial.println(ctr, BIN);
+		}
+		set_all_rgb(ctr, ctr, ctr, 1);
+	}
 }
