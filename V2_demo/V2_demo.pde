@@ -14,17 +14,24 @@
 #include <avr/interrupt.h>
 #include "V2_demo.h"		// needed to make the 'enum' work with Arduino IDE (and other things)
 
+#define COLOR_BIT_DEPTH 6
+#define MAX_BRIGHTNESS 63	// ( (2^COLOR_BIT_DEPTH) - 1 )
+
+// if COLOR_BIT_DEPTH and MAX_BRIGHTENSS (both at the same time!) are changed, this array must be adapted as well
+// it goes from 1 ... ( 2^ (COLOR_BIT_DEPTH-1) ) ... and symetrical back to 1
+uint8_t bit_weight[] = { 1, 2, 4, 8, 16, 32, 32, 16, 8, 4, 2, 1};
+
 uint8_t brightness_red[8];	/* memory for RED LEDs */
 uint8_t brightness_green[8];	/* memory for GREEN LEDs */
 uint8_t brightness_blue[8];	/* memory for BLUE LEDs */
 
-uint8_t sbcm_red_a[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t sbcm_green_a[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t sbcm_blue_a[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t sbcm_red_a[(2*COLOR_BIT_DEPTH)] = {};
+uint8_t sbcm_green_a[(2*COLOR_BIT_DEPTH)] = {};
+uint8_t sbcm_blue_a[(2*COLOR_BIT_DEPTH)] = {};
 
-uint8_t sbcm_red_b[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t sbcm_green_b[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
-uint8_t sbcm_blue_b[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
+uint8_t sbcm_red_b[(2*COLOR_BIT_DEPTH)] = {};
+uint8_t sbcm_green_b[(2*COLOR_BIT_DEPTH)] = {};
+uint8_t sbcm_blue_b[(2*COLOR_BIT_DEPTH)] = {};
 
 uint8_t which_buffer = 0;	// 0 for sbcm_a, 1 for sbcm_b
 
@@ -32,12 +39,7 @@ uint8_t *sbcm_red_live = sbcm_red_a;
 uint8_t *sbcm_green_live = sbcm_green_a;
 uint8_t *sbcm_blue_live = sbcm_blue_a;
 
-uint8_t bit_weight[8] = { 1, 2, 4, 8, 16, 32, 64, 128 };
-
 volatile uint8_t want_buffer_flip;
-
-#define __color_bit_depth 6
-#define __max_brightness 63	// ( (2^__color_bit_depth) - 1 )
 
 #ifdef DOTCORR
 #define DOTCORR_RED 0
@@ -68,7 +70,7 @@ void setup(void)
 
 void loop(void)
 {
-	uint16_t ctr = 0;
+  	uint16_t ctr = 0;
 
 	for (ctr = 0; ctr < 3; ctr++) {
 		fader();
@@ -301,7 +303,7 @@ void fader(void)
 	uint8_t ctr1;
 	uint8_t led;
 
-	for (ctr1 = 0; ctr1 <= __max_brightness; ctr1++) {
+	for (ctr1 = 0; ctr1 <= MAX_BRIGHTNESS; ctr1++) {
 		for (led = 0; led <= (8 - 1); led++) {
 			set_led_rgb(led, ctr1, ctr1, ctr1, 0);	// don't flip buffers after each led change here
 		}
@@ -309,7 +311,7 @@ void fader(void)
 		delay(__fade_delay);
 	}
 
-	for (ctr1 = __max_brightness; (ctr1 >= 0) & (ctr1 != 255); ctr1--) {
+	for (ctr1 = MAX_BRIGHTNESS; (ctr1 >= 0) & (ctr1 != 255); ctr1--) {
 		for (led = 0; led <= (8 - 1); led++) {
 			set_led_rgb(led, ctr1, ctr1, ctr1, 0);	// don't flip buffers after each led change here
 		}
@@ -347,7 +349,7 @@ void set_led_red(uint8_t led, uint8_t red, uint8_t buffer_flip)
 {
 #ifdef DOTCORR
 	int8_t dotcorr =
-	    (int8_t) ((int16_t) (DOTCORR_RED) * red / __max_brightness);
+	    (int8_t) ((int16_t) (DOTCORR_RED) * red / MAX_BRIGHTNESS);
 	uint8_t value;
 	if (red + dotcorr < 0) {
 		value = 0;
@@ -367,7 +369,7 @@ void set_led_green(uint8_t led, uint8_t green, uint8_t buffer_flip)
 {
 #ifdef DOTCORR
 	int8_t dotcorr =
-	    (int8_t) ((int16_t) (DOTCORR_GREEN) * green / __max_brightness);
+	    (int8_t) ((int16_t) (DOTCORR_GREEN) * green / MAX_BRIGHTNESS);
 	uint8_t value;
 	if (green + dotcorr < 0) {
 		value = 0;
@@ -387,7 +389,7 @@ void set_led_blue(uint8_t led, uint8_t blue, uint8_t buffer_flip)
 {
 #ifdef DOTCORR
 	int8_t dotcorr =
-	    (int8_t) ((int16_t) (DOTCORR_BLUE) * blue / __max_brightness);
+	    (int8_t) ((int16_t) (DOTCORR_BLUE) * blue / MAX_BRIGHTNESS);
 	uint8_t value;
 	if (blue + dotcorr < 0) {
 		value = 0;
@@ -524,7 +526,7 @@ void set_led_hsv(uint8_t led, uint16_t hue, uint8_t sat, uint8_t val,
 		B = d;
 	}
 
-	uint16_t scale_factor = mmd / __max_brightness;
+	uint16_t scale_factor = mmd / MAX_BRIGHTNESS;
 
 	R = (uint8_t) (R / scale_factor);
 	G = (uint8_t) (G / scale_factor);
@@ -587,31 +589,47 @@ ISR(TIMER1_COMPA_vect)
 	static uint8_t bcm_ctr = 0;
 	static uint8_t color = 0;
 	uint8_t bcm_data = 0;
+        uint8_t bcm_ctr_prev = 0;
 	uint8_t OCR1A_next;
+
+        bcm_ctr_prev = bcm_ctr;
+        bcm_ctr++;
+        
+	if ( bcm_ctr == (2*COLOR_BIT_DEPTH + 1) ) {
+                color++;
+  		bcm_ctr = 0;
+		OCR1A_next = 1;
+                if(color == 3) {
+                  color = 0;
+                }
+                goto LEAVE_A; // any comments on this ;-)
+	}
+
+	OCR1A_next = bit_weight[bcm_ctr_prev];
 
 	switch (color) {
 	case 0:
 		PORTD |= _BV(BLUE_GATE);
 		PORTD |= _BV(GREEN_GATE);
 		PORTD &= ~_BV(RED_GATE);	// gate low --> on
-		bcm_data = sbcm_red_live[bcm_ctr];
+		bcm_data = sbcm_red_live[bcm_ctr_prev]; // <-- had 'bcm_ctr' there and couldn't find it for hours...
 		break;
 	case 1:
 		PORTD |= _BV(BLUE_GATE);
 		PORTD |= _BV(RED_GATE);
 		PORTD &= ~_BV(GREEN_GATE);	// gate low --> on
-		bcm_data = sbcm_green_live[bcm_ctr];
+		bcm_data = sbcm_green_live[bcm_ctr_prev];  //  pull pre-calculated data from RAM
 		break;
 	case 2:
 		PORTD |= _BV(RED_GATE);
 		PORTD |= _BV(GREEN_GATE);
 		PORTD &= ~_BV(BLUE_GATE);	// gate low --> on
-		bcm_data = sbcm_blue_live[bcm_ctr];
+		bcm_data = sbcm_blue_live[bcm_ctr_prev]; //  pull pre-calculated data from RAM
 		break;
 	default:
-		PORTD &= ~_BV(RED_GATE);
-		PORTD &= ~_BV(GREEN_GATE);
-		PORTD &= ~_BV(BLUE_GATE);
+		PORTD |= _BV(RED_GATE);
+		PORTD |= _BV(GREEN_GATE);
+		PORTD |= _BV(BLUE_GATE);
 		break;
 	}
 
@@ -619,18 +637,7 @@ ISR(TIMER1_COMPA_vect)
 	spi_transfer(bcm_data);
 	LATCH_HIGH;
 
-	OCR1A_next = bit_weight[bcm_ctr++];
-
-	if (bcm_ctr == __color_bit_depth + 1) {
-		bcm_ctr = 0;
-		color++;
-		OCR1A_next = 1;
-	}
-
-	if (color == 3) {
-		color = 0;
-	}
-
+        LEAVE_A:
 	OCR1A = OCR1A_next;	// when to run next time
 	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
@@ -638,26 +645,32 @@ ISR(TIMER1_COMPA_vect)
 
 #ifdef V20beta
 	uint8_t OCR1A_next;
-	static uint8_t bcm_ctr = 0;
+        uint8_t bcm_ctr_prev = 0;
+      	static uint8_t bcm_ctr = 0;
+
+        bcm_ctr_prev = bcm_ctr;
+        bcm_ctr++;
+        
+	if ( bcm_ctr == (2*COLOR_BIT_DEPTH + 1) ) {
+		bcm_ctr = 0;
+		OCR1A_next = 1;
+                goto LEAVE_B; // any comments on this ;-)
+	}
+
+	OCR1A_next = bit_weight[bcm_ctr_prev];
 
 	LATCH_LOW;
 	//
 	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
 	// correct for the kind of RGB LED you use.
 	//
-	spi_transfer(sbcm_blue_live[bcm_ctr]);
-	spi_transfer(sbcm_green_live[bcm_ctr]);
-	spi_transfer(sbcm_red_live[bcm_ctr]);
+	spi_transfer(sbcm_blue_live[bcm_ctr_prev]); //  pull pre-calculated data from RAM
+	spi_transfer(sbcm_green_live[bcm_ctr_prev]);
+	spi_transfer(sbcm_red_live[bcm_ctr_prev]);
 	LATCH_HIGH;
 
-	OCR1A_next = bit_weight[bcm_ctr++];	// post increment !!
-
-	if (bcm_ctr == __color_bit_depth + 1) {
-		bcm_ctr = 0;
-		OCR1A_next = 1;
-	}
-
-	OCR1A = OCR1A_next;	// when to run next time
+        LEAVE_B:
+        OCR1A = OCR1A_next;	// when to run next time
 	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
 #endif
@@ -667,7 +680,18 @@ ISR(TIMER1_COMPA_vect)
 
 void flip_buffers(void)
 {
-	// first rebuild the bcm array
+        // this is an attempt to implement 'MIBAM'
+        //
+        // http://www.picbasic.co.uk/forum/showthread.php?t=7393
+        // http://www.picbasic.co.uk/forum/showthread.php?t=10564
+        //
+        // it still seeems to flicker at certain level transitions
+        // the moving average jumps... ;-(
+        //
+        // looks like some more analyzer time...
+        //
+  
+  	// first rebuild the bcm array
 
 	uint8_t read_ctr;
 	uint8_t write_ctr;
@@ -699,7 +723,7 @@ void flip_buffers(void)
 	// are written to
 	// sbcm_red[0].bit0, sbcm_red[0].bit1, sbcm_red[0].bit2, sbmc_red[0].bit3 ...
 
-	for (write_ctr = 0; write_ctr <= 7; write_ctr++) {
+	for (write_ctr = 0; write_ctr <= (COLOR_BIT_DEPTH - 1); write_ctr++) {
 
 		tmp_write = _BV(write_ctr);
 
@@ -722,6 +746,14 @@ void flip_buffers(void)
 			}
 		}
 	}
+        
+        // now create the mirror signal in the 2nd half of the arrays
+        
+        for (write_ctr=0; write_ctr <= (COLOR_BIT_DEPTH - 1); write_ctr++) {
+          sbcm_red_write_to[2*COLOR_BIT_DEPTH - 1 - write_ctr] = sbcm_red_write_to[write_ctr]; 
+          sbcm_green_write_to[2*COLOR_BIT_DEPTH - 1 - write_ctr] = sbcm_green_write_to[write_ctr];
+          sbcm_blue_write_to[2*COLOR_BIT_DEPTH - 1 - write_ctr] = sbcm_blue_write_to[write_ctr];          
+        }
 
 	// now signal that we want to change the live buffer
 
@@ -779,7 +811,7 @@ void setup_hardware_spi(void)
 	clr = SPSR;
 	clr = SPDR;
 	/* set prescaler to fosc/2 */
-	SPCR &= ~(_BV(SPR1) | _BV(SPR0));
+ 	SPCR &= ~(_BV(SPR1) | _BV(SPR0));
 	SPSR |= _BV(SPI2X);
 }
 
