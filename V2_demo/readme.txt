@@ -1,3 +1,6 @@
+!! You need at least a 2.0beta board for this to work !!
+
+
 If you need super-smooth color fading, please use the Arduino 'ShiftPWM' library.
 It works with the Arduino IDE V0023 (tested).
 
