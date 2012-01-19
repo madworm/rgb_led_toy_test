@@ -5,8 +5,10 @@ Download location: http://code.google.com/p/shiftpwm/downloads/list
 
 
 There are a few short modifications to make it work:
+----------------------------------------------------
 
 1.) Open the file 'CShiftPWM.cpp' in the library folder.
+
 
 2.) Search for the function 'CShiftPWM::SetGroupOf3' and replace it with this:
 
@@ -29,7 +31,8 @@ If you need the other functions as well, modify them accordingly.
 
 Don't forget to save the file before you compile code.
 
-3.) Insert these 2 lines in the setup() function of the 'ShiftPWM_Example1' example.
+
+3.) Insert these 2 lines in the setup() function of the 'ShiftPWM_Example1' example:
 
 --- snip ---
 
@@ -40,6 +43,15 @@ PORTB &= ~_BV(PB6);
 
 This enables the LED drivers on the V2.x.x ring boards.
 
-DONE.
+
+4.) change / set these variables in the 'ShiftPWM_Example1' example:
+
+const int ShiftPWM_latchPin = 10;
+const bool ShiftPWM_invertOutputs = 0;
+int numRegisters = 3;
+
+
+5.) Compile and upload.
+
 
 Have fun!
