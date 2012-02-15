@@ -2,7 +2,8 @@
  * 2012 - robert:aT:spitzenpfeil_d*t:org - RGB_LED_Ring Demo
  */
 
-#define V20beta
+#define V20final
+//#define V20beta
 //#define V20alpha
 
 #ifdef V20alpha
@@ -53,12 +54,19 @@ volatile uint8_t want_buffer_flip;
 
 void setup(void)
 {
-#ifdef V20alpha
-	DDRD |= _BV(RED_GATE) | _BV(GREEN_GATE) | _BV(BLUE_GATE);	// P-MOSFET gates as outputs
+
+#ifdef V20final
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
+	DDRD |= _BV(PD6);	// same as pinMode(6,OUTPUT);
+	analogWrite(6, 255);	// off
 #endif
 
 #ifdef V20beta
+	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
+#endif
+
+#ifdef V20alpha
+	DDRD |= _BV(RED_GATE) | _BV(GREEN_GATE) | _BV(BLUE_GATE);	// P-MOSFET gates as outputs
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
 
@@ -71,6 +79,23 @@ void setup(void)
 void loop(void)
 {
 	uint16_t ctr = 0;
+
+#ifdef V20final
+	set_all_rgb(63, 0, 0, 1);
+
+	uint8_t ctr2;
+	for (ctr2 = 0; ctr2 <= 25; ctr2++) {
+
+		for (ctr = 255; ctr > 0; ctr--) {
+			analogWrite(6, ctr);
+			delay(5);
+		}
+		for (ctr = 0; ctr <= 255; ctr++) {
+			analogWrite(6, ctr);
+			delay(5);
+		}
+	}
+#endif
 
 	for (ctr = 0; ctr < 3; ctr++) {
 		fader();
@@ -556,6 +581,12 @@ void setup_timer1_ctc(void)
 	uint8_t _sreg = SREG;	/* save SREG */
 	cli();			/* disable all interrupts while messing with the register setup */
 
+#ifdef V20final
+	/* set prescaler to 64 */
+	TCCR1B |= (_BV(CS11) | _BV(CS10));
+	TCCR1B &= ~(_BV(CS12));
+#endif
+
 #ifdef V20beta
 	/* set prescaler to 64 */
 	TCCR1B |= (_BV(CS11) | _BV(CS10));
@@ -585,6 +616,71 @@ void setup_timer1_ctc(void)
 ISR(TIMER1_COMPA_vect)
 {
 	DRIVER_OFF;
+
+#ifdef V20final
+	uint8_t OCR1A_next;
+	uint8_t bcm_ctr_prev = 0;
+	static uint8_t bcm_ctr = 0;
+
+	bcm_ctr_prev = bcm_ctr;
+	bcm_ctr++;
+
+	if (bcm_ctr == (2 * COLOR_BIT_DEPTH + 1)) {
+		bcm_ctr = 0;
+		OCR1A_next = 1;
+		goto LEAVE_B;	// any comments on this ;-)
+	}
+
+	OCR1A_next = bit_weight[bcm_ctr_prev];
+
+	LATCH_LOW;
+	//
+	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
+	// correct for the kind of RGB LED you use.
+	//
+	spi_transfer(sbcm_blue_live[bcm_ctr_prev]);	//  pull pre-calculated data from RAM
+	spi_transfer(sbcm_green_live[bcm_ctr_prev]);
+	spi_transfer(sbcm_red_live[bcm_ctr_prev]);
+	LATCH_HIGH;
+
+ LEAVE_B:
+	OCR1A = OCR1A_next;	// when to run next time
+	TCNT1 = 0;		// clear timer to compensate for code runtime above
+	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
+#endif
+
+#ifdef V20beta
+	uint8_t OCR1A_next;
+	uint8_t bcm_ctr_prev = 0;
+	static uint8_t bcm_ctr = 0;
+
+	bcm_ctr_prev = bcm_ctr;
+	bcm_ctr++;
+
+	if (bcm_ctr == (2 * COLOR_BIT_DEPTH + 1)) {
+		bcm_ctr = 0;
+		OCR1A_next = 1;
+		goto LEAVE_B;	// any comments on this ;-)
+	}
+
+	OCR1A_next = bit_weight[bcm_ctr_prev];
+
+	LATCH_LOW;
+	//
+	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
+	// correct for the kind of RGB LED you use.
+	//
+	spi_transfer(sbcm_blue_live[bcm_ctr_prev]);	//  pull pre-calculated data from RAM
+	spi_transfer(sbcm_green_live[bcm_ctr_prev]);
+	spi_transfer(sbcm_red_live[bcm_ctr_prev]);
+	LATCH_HIGH;
+
+ LEAVE_B:
+	OCR1A = OCR1A_next;	// when to run next time
+	TCNT1 = 0;		// clear timer to compensate for code runtime above
+	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
+#endif
+
 #ifdef V20alpha
 	static uint8_t bcm_ctr = 0;
 	static uint8_t color = 0;
@@ -643,37 +739,6 @@ ISR(TIMER1_COMPA_vect)
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
 #endif
 
-#ifdef V20beta
-	uint8_t OCR1A_next;
-	uint8_t bcm_ctr_prev = 0;
-	static uint8_t bcm_ctr = 0;
-
-	bcm_ctr_prev = bcm_ctr;
-	bcm_ctr++;
-
-	if (bcm_ctr == (2 * COLOR_BIT_DEPTH + 1)) {
-		bcm_ctr = 0;
-		OCR1A_next = 1;
-		goto LEAVE_B;	// any comments on this ;-)
-	}
-
-	OCR1A_next = bit_weight[bcm_ctr_prev];
-
-	LATCH_LOW;
-	//
-	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
-	// correct for the kind of RGB LED you use.
-	//
-	spi_transfer(sbcm_blue_live[bcm_ctr_prev]);	//  pull pre-calculated data from RAM
-	spi_transfer(sbcm_green_live[bcm_ctr_prev]);
-	spi_transfer(sbcm_red_live[bcm_ctr_prev]);
-	LATCH_HIGH;
-
- LEAVE_B:
-	OCR1A = OCR1A_next;	// when to run next time
-	TCNT1 = 0;		// clear timer to compensate for code runtime above
-	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
-#endif
 	want_buffer_flip = 0;	// signal that a new BCM cycle is about to start
 	DRIVER_ON;
 }
