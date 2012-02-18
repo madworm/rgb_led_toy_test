@@ -81,11 +81,9 @@ void loop(void)
 	uint16_t ctr = 0;
 
 #ifdef V20final
-	set_all_rgb(63, 0, 0, 1);
-
 	uint8_t ctr2;
-	for (ctr2 = 0; ctr2 <= 25; ctr2++) {
-
+        set_all_rgb(63,0,0,1);
+	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
 		for (ctr = 255; ctr > 0; ctr--) {
 			analogWrite(6, ctr);
 			delay(5);
@@ -95,6 +93,29 @@ void loop(void)
 			delay(5);
 		}
 	}
+        set_all_rgb(0,63,0,1);
+	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
+		for (ctr = 255; ctr > 0; ctr--) {
+			analogWrite(6, ctr);
+			delay(5);
+		}
+		for (ctr = 0; ctr <= 255; ctr++) {
+			analogWrite(6, ctr);
+			delay(5);
+		}
+	}
+        set_all_rgb(0,0,63,1);
+	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
+		for (ctr = 255; ctr > 0; ctr--) {
+			analogWrite(6, ctr);
+			delay(5);
+		}
+		for (ctr = 0; ctr <= 255; ctr++) {
+			analogWrite(6, ctr);
+			delay(5);
+		}
+	}
+        delay(2000);
 #endif
 
 	for (ctr = 0; ctr < 3; ctr++) {
