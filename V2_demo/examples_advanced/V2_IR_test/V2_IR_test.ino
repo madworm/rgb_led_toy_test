@@ -31,6 +31,10 @@ unsigned char maxBrightness = 255;
 unsigned char pwmFrequency = 75;
 int numRegisters = 3;
 
+#define STARTUP_HUE 0U
+#define STARTUP_SAT 255U
+#define STARTUP_VAL 16U
+
 #include <ShiftPWM.h>   // modified version! - include ShiftPWM.h after setting the pins!
 
 void setup(void)
@@ -73,14 +77,15 @@ void setup(void)
         ShiftPWM.SetAll(0);
         ShiftPWM.Start(pwmFrequency,maxBrightness);  
         
-        set_all_hsv(0,255,16);
+        set_all_hsv(STARTUP_HUE, STARTUP_SAT, STARTUP_VAL);
 }
 
 void loop(void)
 {
-                static uint8_t state = 0;
-                static uint16_t hue = 0;
-                static uint8_t val = 16;
+                static uint8_t state = 1;
+                static uint16_t hue = STARTUP_HUE;
+                static uint8_t sat = STARTUP_SAT;
+                static uint8_t val = STARTUP_VAL;
 		static uint16_t pulse_counter = 0;
 		if (IR_available()) {
 #ifdef DEBUG
@@ -92,42 +97,79 @@ void loop(void)
 			Serial.print(F(" - "));
 			switch (eval_IR_code(pulses_read_from)) {
 			case VOL_DOWN:
-                                hue = (hue - 1 + 360) % 360;
-                                set_all_hsv(hue,255,val);
+                                hue = (hue - 8 + 360) % 360;
+                                set_all_hsv(hue,sat,val);
       				Serial.print(F("HUE - : "));
                                 Serial.print(hue);
 				break;
 			case PLAY_PAUSE:
-				Serial.print(F("ON/OFF"));
                                 switch (state) {
                                   case 0:
                                     state = 1;
-                                    set_all_hsv(hue,255,val);
+                                    set_all_hsv(hue,sat,val);
+                                Serial.print(F("ON - "));
+      				Serial.print(F("HUE : "));
+                                Serial.print(hue);
+      				Serial.print(F(" SAT : "));
+                                Serial.print(sat);                                
+    			        Serial.print(F(" VAL : "));
+                                Serial.print(val);
                                     break;
                                   case 1:
                                     state = 0;
-                                    set_all_hsv(hue,255,0);
+                                    set_all_hsv(hue,sat,0);
+                                    Serial.print(F("OFF"));
                                   break;
                                   default:
                                   break;
                                 }
 				break;
 			case VOL_UP:
-                                hue = (hue + 1 + 360) % 360;
-                                set_all_hsv(hue,255,val);
+                                hue = (hue + 8 + 360) % 360;
+                                set_all_hsv(hue,sat,val);
        				Serial.print(F("HUE + : "));
                                 Serial.print(hue);       
 				break;
                         case ARROW_UP:
-                                set_all_hsv(hue,255,++val);
+                                if( val + 8 < 255 ) {
+                                  val = val + 8;
+                                } else {
+                                  val = 255;
+                                }
+                                set_all_hsv(hue,sat,val);
        				Serial.print(F("VAL + : "));
                                 Serial.print(val);       
                                 break;
                         case ARROW_DOWN:
-                                set_all_hsv(hue,255,--val);
+                                if( val - 8 > 0 ) {
+                                  val = val - 8;
+                                } else {
+                                  val = 0;
+                                }
+                                set_all_hsv(hue,sat,val);
        				Serial.print(F("VAL - : "));
                                 Serial.print(val);         
-                                break;                              
+                                break;       
+                        case ARROW_LEFT:
+                                if( sat - 8 > 0 ) {
+                                  sat = sat - 8;
+                                } else {
+                                  sat = 0;
+                                }
+                                set_all_hsv(hue,sat,val);
+       				Serial.print(F("SAT - : "));
+                                Serial.print(sat);       
+                                break;
+                        case ARROW_RIGHT:
+                                if( sat + 8 < 255 ) {
+                                  sat = sat + 8;
+                                } else {
+                                  sat = 255;
+                                }
+                                set_all_hsv(hue,sat,val);
+       				Serial.print(F("SAT - : "));
+                                Serial.print(sat);         
+                                break;                
 			default:
 				break;
 			}
