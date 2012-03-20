@@ -831,20 +831,20 @@ const uint16_t PROGMEM IRsignals[NUMBER_OF_IR_CODES][72] = {
 	vol_down,
 	play_pause,
 	vol_up,
-        arrow_up,
-        arrow_down,
-        arrow_left,
-        arrow_right,
+	arrow_up,
+	arrow_down,
+	arrow_left,
+	arrow_right,
 };
 
 typedef enum {			// all elements EXCEPT (REPEAT_CODE, MISMATCH and NOT_SURE_YET) must be in the same
 	VOL_DOWN,		// order (if present at all) as in the PROGMEM array above! These 3 special elements
 	PLAY_PAUSE,		// must ALWAYS be there.
 	VOL_UP,
-        ARROW_UP,
-        ARROW_DOWN,
-        ARROW_LEFT,
-        ARROW_RIGHT,
+	ARROW_UP,
+	ARROW_DOWN,
+	ARROW_LEFT,
+	ARROW_RIGHT,
 	// DO NOT EDIT THESE LAST 3!
 	REPEAT_CODE = 66,
 	MISMATCH = 77,		// only returned if something goes terribly wrong

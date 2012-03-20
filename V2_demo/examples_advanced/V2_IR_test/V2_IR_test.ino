@@ -24,8 +24,8 @@ uint32_t last_IR_activity = 0;
 
 //Data pin is MOSI (atmega168/328: pin 11. Mega: 51) 
 //Clock pin is SCK (atmega168/328: pin 13. Mega: 52)
-const int ShiftPWM_latchPin=10;
-const bool ShiftPWM_invertOutputs = 0; // if invertOutputs is 1, outputs will be active low. Usefull for common anode RGB led's.
+const int ShiftPWM_latchPin = 10;
+const bool ShiftPWM_invertOutputs = 0;	// if invertOutputs is 1, outputs will be active low. Usefull for common anode RGB led's.
 
 unsigned char maxBrightness = 255;
 unsigned char pwmFrequency = 75;
@@ -35,7 +35,7 @@ int numRegisters = 3;
 #define STARTUP_SAT 255U
 #define STARTUP_VAL 16U
 
-#include <ShiftPWM.h>   // modified version! - include ShiftPWM.h after setting the pins!
+#include <ShiftPWM.h>		// modified version! - include ShiftPWM.h after setting the pins!
 
 void setup(void)
 {
@@ -50,9 +50,9 @@ void setup(void)
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
 
-        //
-        // IR stuff
-        //
+	//
+	// IR stuff
+	//
 	Serial.begin(9600);
 	Serial.println(F("Ready to decode IR!"));
 	zero_pulses(pulses_read_from);
@@ -61,135 +61,135 @@ void setup(void)
 	PORTC |= _BV(PC5);	// pull-up on
 
 	PCICR |= _BV(PCIE1);	// enable pin-change interrupt for pin-group 1
-        PCMSK1 |= _BV(PCINT13);	// enable pin-change interrupt por pin PC5 (PCINT13)  
-        
-        //
-        // ShiftPWM stuff
-        //
-        pinMode(ShiftPWM_latchPin, OUTPUT);  
-        SPI.setBitOrder(LSBFIRST);
-        // SPI_CLOCK_DIV2 is only a tiny bit faster in sending out the last byte. 
-        // SPI transfer and calculations overlap for the other bytes.
-        SPI.setClockDivider(SPI_CLOCK_DIV2); 
-        SPI.begin(); 
+	PCMSK1 |= _BV(PCINT13);	// enable pin-change interrupt por pin PC5 (PCINT13)  
 
-        ShiftPWM.SetAmountOfRegisters(numRegisters);
-        ShiftPWM.SetAll(0);
-        ShiftPWM.Start(pwmFrequency,maxBrightness);  
-        
-        set_all_hsv(STARTUP_HUE, STARTUP_SAT, STARTUP_VAL);
+	//
+	// ShiftPWM stuff
+	//
+	pinMode(ShiftPWM_latchPin, OUTPUT);
+	SPI.setBitOrder(LSBFIRST);
+	// SPI_CLOCK_DIV2 is only a tiny bit faster in sending out the last byte. 
+	// SPI transfer and calculations overlap for the other bytes.
+	SPI.setClockDivider(SPI_CLOCK_DIV2);
+	SPI.begin();
+
+	ShiftPWM.SetAmountOfRegisters(numRegisters);
+	ShiftPWM.SetAll(0);
+	ShiftPWM.Start(pwmFrequency, maxBrightness);
+
+	set_all_hsv(STARTUP_HUE, STARTUP_SAT, STARTUP_VAL);
 }
 
 void loop(void)
 {
-                static uint8_t state = 1;
-                static uint16_t hue = STARTUP_HUE;
-                static uint8_t sat = STARTUP_SAT;
-                static uint8_t val = STARTUP_VAL;
-		static uint16_t pulse_counter = 0;
-		if (IR_available()) {
+	static uint8_t state = 1;
+	static uint16_t hue = STARTUP_HUE;
+	static uint8_t sat = STARTUP_SAT;
+	static uint8_t val = STARTUP_VAL;
+	static uint16_t pulse_counter = 0;
+	if (IR_available()) {
 #ifdef DEBUG
-			Serial.print(F("\r\n\npulse #: "));
+		Serial.print(F("\r\n\npulse #: "));
 #else
-			Serial.print(F("pulse #: "));
+		Serial.print(F("pulse #: "));
 #endif
-			Serial.print(pulse_counter);
-			Serial.print(F(" - "));
-			switch (eval_IR_code(pulses_read_from)) {
-			case VOL_DOWN:
-                                hue = (hue - 8 + 360) % 360;
-                                set_all_hsv(hue,sat,val);
-      				Serial.print(F("HUE - : "));
-                                Serial.print(hue);
+		Serial.print(pulse_counter);
+		Serial.print(F(" - "));
+		switch (eval_IR_code(pulses_read_from)) {
+		case VOL_DOWN:
+			hue = (hue - 8 + 360) % 360;
+			set_all_hsv(hue, sat, val);
+			Serial.print(F("HUE - : "));
+			Serial.print(hue);
+			break;
+		case PLAY_PAUSE:
+			switch (state) {
+			case 0:
+				state = 1;
+				set_all_hsv(hue, sat, val);
+				Serial.print(F("ON - "));
+				Serial.print(F("HUE : "));
+				Serial.print(hue);
+				Serial.print(F(" SAT : "));
+				Serial.print(sat);
+				Serial.print(F(" VAL : "));
+				Serial.print(val);
 				break;
-			case PLAY_PAUSE:
-                                switch (state) {
-                                  case 0:
-                                    state = 1;
-                                    set_all_hsv(hue,sat,val);
-                                Serial.print(F("ON - "));
-      				Serial.print(F("HUE : "));
-                                Serial.print(hue);
-      				Serial.print(F(" SAT : "));
-                                Serial.print(sat);                                
-    			        Serial.print(F(" VAL : "));
-                                Serial.print(val);
-                                    break;
-                                  case 1:
-                                    state = 0;
-                                    set_all_hsv(hue,sat,0);
-                                    Serial.print(F("OFF"));
-                                  break;
-                                  default:
-                                  break;
-                                }
+			case 1:
+				state = 0;
+				set_all_hsv(hue, sat, 0);
+				Serial.print(F("OFF"));
 				break;
-			case VOL_UP:
-                                hue = (hue + 8 + 360) % 360;
-                                set_all_hsv(hue,sat,val);
-       				Serial.print(F("HUE + : "));
-                                Serial.print(hue);       
-				break;
-                        case ARROW_UP:
-                                if( val + 8 < 255 ) {
-                                  val = val + 8;
-                                } else {
-                                  val = 255;
-                                }
-                                set_all_hsv(hue,sat,val);
-       				Serial.print(F("VAL + : "));
-                                Serial.print(val);       
-                                break;
-                        case ARROW_DOWN:
-                                if( val - 8 > 0 ) {
-                                  val = val - 8;
-                                } else {
-                                  val = 0;
-                                }
-                                set_all_hsv(hue,sat,val);
-       				Serial.print(F("VAL - : "));
-                                Serial.print(val);         
-                                break;       
-                        case ARROW_LEFT:
-                                if( sat - 8 > 0 ) {
-                                  sat = sat - 8;
-                                } else {
-                                  sat = 0;
-                                }
-                                set_all_hsv(hue,sat,val);
-       				Serial.print(F("SAT - : "));
-                                Serial.print(sat);       
-                                break;
-                        case ARROW_RIGHT:
-                                if( sat + 8 < 255 ) {
-                                  sat = sat + 8;
-                                } else {
-                                  sat = 255;
-                                }
-                                set_all_hsv(hue,sat,val);
-       				Serial.print(F("SAT - : "));
-                                Serial.print(sat);         
-                                break;                
 			default:
 				break;
 			}
-                        Serial.println("");
-			pulse_counter++;
+			break;
+		case VOL_UP:
+			hue = (hue + 8 + 360) % 360;
+			set_all_hsv(hue, sat, val);
+			Serial.print(F("HUE + : "));
+			Serial.print(hue);
+			break;
+		case ARROW_UP:
+			if (val + 8 < 255) {
+				val = val + 8;
+			} else {
+				val = 255;
+			}
+			set_all_hsv(hue, sat, val);
+			Serial.print(F("VAL + : "));
+			Serial.print(val);
+			break;
+		case ARROW_DOWN:
+			if (val - 8 > 0) {
+				val = val - 8;
+			} else {
+				val = 0;
+			}
+			set_all_hsv(hue, sat, val);
+			Serial.print(F("VAL - : "));
+			Serial.print(val);
+			break;
+		case ARROW_LEFT:
+			if (sat - 8 > 0) {
+				sat = sat - 8;
+			} else {
+				sat = 0;
+			}
+			set_all_hsv(hue, sat, val);
+			Serial.print(F("SAT - : "));
+			Serial.print(sat);
+			break;
+		case ARROW_RIGHT:
+			if (sat + 8 < 255) {
+				sat = sat + 8;
+			} else {
+				sat = 255;
+			}
+			set_all_hsv(hue, sat, val);
+			Serial.print(F("SAT - : "));
+			Serial.print(sat);
+			break;
+		default:
+			break;
 		}
+		Serial.println("");
+		pulse_counter++;
+	}
 }
 
-void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val) {
-  uint8_t red, green, blue;
-  uint8_t led;
-  hsv2rgb(hue, sat, val, &red, &green, &blue, maxBrightness);
-  
-  DRIVER_OFF;
-  for (led = 0; led < 8; led++) {
-    ShiftPWM.SetGroupOf3(led, red, green, blue);
-  }
-  DRIVER_ON;
-}
+void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
+{
+	uint8_t red, green, blue;
+	uint8_t led;
+	hsv2rgb(hue, sat, val, &red, &green, &blue, maxBrightness);
 
+	DRIVER_OFF;
+	for (led = 0; led < 8; led++) {
+		ShiftPWM.SetGroupOf3(led, red, green, blue);
+	}
+	DRIVER_ON;
+}
 
 //
 // IR stuff
