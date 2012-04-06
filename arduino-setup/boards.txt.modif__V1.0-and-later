@@ -67,8 +67,9 @@ RGBLedRing2.build.variant=eightanaloginputs
 
 
 
-
+##	                   S T O P                          ##
 ##  backward compatibility - not recommended for new stuff  ##
+##     only use this if you are 100% sure you need it       ##
 
 ##############################################################
 #

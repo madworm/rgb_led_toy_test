@@ -64,8 +64,9 @@ RGBLedRing2.build.core=arduino
 
 
 
-
+##	                   S T O P                          ##
 ##  backward compatibility - not recommended for new stuff  ##
+##     only use this if you are 100% sure you need it       ##
 
 ##############################################################
 #
