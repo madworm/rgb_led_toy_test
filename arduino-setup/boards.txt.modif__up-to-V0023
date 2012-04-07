@@ -43,15 +43,15 @@ RGBLedRing1.build.core=arduino
 # 'Burn Bootloader' - 'w/ USBtinyISP' just once
 # this makes sure the correct FUSE settings are used
 #
-RGBLedRing2.name=RGB LED RING - ATmega168 / 8MHz RC OSC / ATmegaBOOT_168_pro_8MHz
+RGBLedRing2.name=RGB LED RING - ATmega168 / 8MHz RC OSC / optiboot 19k2 (default)
 RGBLedRing2.upload.protocol=stk500
-RGBLedRing2.upload.maximum_size=14336
+RGBLedRing2.upload.maximum_size=15872
 RGBLedRing2.upload.speed=19200
 RGBLedRing2.bootloader.low_fuses=0xE2
 RGBLedRing2.bootloader.high_fuses=0xDD
-RGBLedRing2.bootloader.extended_fuses=0x00
-RGBLedRing2.bootloader.path=atmega
-RGBLedRing2.bootloader.file=ATmegaBOOT_168_pro_8MHz.hex
+RGBLedRing2.bootloader.extended_fuses=0x04
+RGBLedRing2.bootloader.path=optiboot
+RGBLedRing2.bootloader.file=optiboot_lilypad_8MHz_19k2.hex
 RGBLedRing2.bootloader.unlock_bits=0x3F
 RGBLedRing2.bootloader.lock_bits=0x0F
 RGBLedRing2.build.mcu=atmega168
@@ -64,10 +64,6 @@ RGBLedRing2.build.core=arduino
 
 
 
-##	                   S T O P                          ##
-##  backward compatibility - not recommended for new stuff  ##
-##     only use this if you are 100% sure you need it       ##
-
 ##############################################################
 #
 # to activate this board, select it and use:
@@ -75,15 +71,15 @@ RGBLedRing2.build.core=arduino
 # 'Burn Bootloader' - 'w/ USBtinyISP' just once
 # this makes sure the correct FUSE settings are used
 #
-RGBLedRing3.name=RGB LED RING - ATmega168 / 8MHz RC OSC / LilyPad (not rec.)
+RGBLedRing3.name=RGB LED RING - ATmega168 / 8MHz RC OSC / ATmegaBOOT_168_pro_8MHz (alternative)
 RGBLedRing3.upload.protocol=stk500
 RGBLedRing3.upload.maximum_size=14336
 RGBLedRing3.upload.speed=19200
 RGBLedRing3.bootloader.low_fuses=0xE2
 RGBLedRing3.bootloader.high_fuses=0xDD
 RGBLedRing3.bootloader.extended_fuses=0x00
-RGBLedRing3.bootloader.path=lilypad
-RGBLedRing3.bootloader.file=LilyPadBOOT_168.hex
+RGBLedRing3.bootloader.path=atmega
+RGBLedRing3.bootloader.file=ATmegaBOOT_168_pro_8MHz.hex
 RGBLedRing3.bootloader.unlock_bits=0x3F
 RGBLedRing3.bootloader.lock_bits=0x0F
 RGBLedRing3.build.mcu=atmega168
@@ -96,6 +92,11 @@ RGBLedRing3.build.core=arduino
 
 
 
+
+
+
+# You probably won't need this - only for prehistoric boards #
+
 ##############################################################
 #
 # to activate this board, select it and use:
@@ -103,15 +104,15 @@ RGBLedRing3.build.core=arduino
 # 'Burn Bootloader' - 'w/ USBtinyISP' just once
 # this makes sure the correct FUSE settings are used
 #
-RGBLedRing4.name=RGB LED RING - ATmega168 / 8MHz RC OSC / optiboot (not rec.)
+RGBLedRing4.name=RGB LED RING - ATmega168 / 8MHz RC OSC / LilyPad (prehistoric)
 RGBLedRing4.upload.protocol=stk500
-RGBLedRing4.upload.maximum_size=15872
-RGBLedRing4.upload.speed=115200
+RGBLedRing4.upload.maximum_size=14336
+RGBLedRing4.upload.speed=19200
 RGBLedRing4.bootloader.low_fuses=0xE2
 RGBLedRing4.bootloader.high_fuses=0xDD
-RGBLedRing4.bootloader.extended_fuses=0x04
-RGBLedRing4.bootloader.path=optiboot
-RGBLedRing4.bootloader.file=optiboot_pro_8MHz.hex
+RGBLedRing4.bootloader.extended_fuses=0x00
+RGBLedRing4.bootloader.path=lilypad
+RGBLedRing4.bootloader.file=LilyPadBOOT_168.hex
 RGBLedRing4.bootloader.unlock_bits=0x3F
 RGBLedRing4.bootloader.lock_bits=0x0F
 RGBLedRing4.build.mcu=atmega168
