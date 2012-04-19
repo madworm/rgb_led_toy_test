@@ -82,7 +82,7 @@ void loop(void)
 
 #ifdef V20final
 	uint8_t ctr2;
-        set_all_rgb(63,0,0,1);
+	set_all_rgb(63, 0, 0, 1);
 	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
 		for (ctr = 255; ctr > 0; ctr--) {
 			analogWrite(6, ctr);
@@ -93,7 +93,7 @@ void loop(void)
 			delay(5);
 		}
 	}
-        set_all_rgb(0,63,0,1);
+	set_all_rgb(0, 63, 0, 1);
 	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
 		for (ctr = 255; ctr > 0; ctr--) {
 			analogWrite(6, ctr);
@@ -104,7 +104,7 @@ void loop(void)
 			delay(5);
 		}
 	}
-        set_all_rgb(0,0,63,1);
+	set_all_rgb(0, 0, 63, 1);
 	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
 		for (ctr = 255; ctr > 0; ctr--) {
 			analogWrite(6, ctr);
@@ -115,7 +115,7 @@ void loop(void)
 			delay(5);
 		}
 	}
-        delay(2000);
+	delay(2000);
 #endif
 
 	for (ctr = 0; ctr < 3; ctr++) {
@@ -639,67 +639,51 @@ ISR(TIMER1_COMPA_vect)
 	DRIVER_OFF;
 
 #ifdef V20final
-	uint8_t OCR1A_next;
-	uint8_t bcm_ctr_prev = 0;
 	static uint8_t bcm_ctr = 0;
-
-	bcm_ctr_prev = bcm_ctr;
-	bcm_ctr++;
-
-	if (bcm_ctr == (2 * COLOR_BIT_DEPTH + 1)) {
-		bcm_ctr = 0;
-		OCR1A_next = 1;
-		goto LEAVE_B;	// any comments on this ;-)
-	}
-
-	OCR1A_next = bit_weight[bcm_ctr_prev];
 
 	LATCH_LOW;
 	//
 	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
 	// correct for the kind of RGB LED you use.
 	//
-	spi_transfer(sbcm_blue_live[bcm_ctr_prev]);	//  pull pre-calculated data from RAM
-	spi_transfer(sbcm_green_live[bcm_ctr_prev]);
-	spi_transfer(sbcm_red_live[bcm_ctr_prev]);
+	spi_transfer(sbcm_blue_live[bcm_ctr]);	//  pull pre-calculated data from RAM
+	spi_transfer(sbcm_green_live[bcm_ctr]);
+	spi_transfer(sbcm_red_live[bcm_ctr]);
 	LATCH_HIGH;
 
- LEAVE_B:
-	OCR1A = OCR1A_next;	// when to run next time
-	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
+	OCR1A = bit_weight[bcm_ctr] + TCNT1;	// when to run next time
+
+	bcm_ctr++;		// modulo 12 takes too long
+	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
+		bcm_ctr = 0;
+	}
+
+	want_buffer_flip = 0;	// signal that a new BCM cycle is about to start
 #endif
 
 #ifdef V20beta
-	uint8_t OCR1A_next;
-	uint8_t bcm_ctr_prev = 0;
 	static uint8_t bcm_ctr = 0;
-
-	bcm_ctr_prev = bcm_ctr;
-	bcm_ctr++;
-
-	if (bcm_ctr == (2 * COLOR_BIT_DEPTH + 1)) {
-		bcm_ctr = 0;
-		OCR1A_next = 1;
-		goto LEAVE_B;	// any comments on this ;-)
-	}
-
-	OCR1A_next = bit_weight[bcm_ctr_prev];
 
 	LATCH_LOW;
 	//
 	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
 	// correct for the kind of RGB LED you use.
 	//
-	spi_transfer(sbcm_blue_live[bcm_ctr_prev]);	//  pull pre-calculated data from RAM
-	spi_transfer(sbcm_green_live[bcm_ctr_prev]);
-	spi_transfer(sbcm_red_live[bcm_ctr_prev]);
+	spi_transfer(sbcm_blue_live[bcm_ctr]);	//  pull pre-calculated data from RAM
+	spi_transfer(sbcm_green_live[bcm_ctr]);
+	spi_transfer(sbcm_red_live[bcm_ctr]);
 	LATCH_HIGH;
 
- LEAVE_B:
-	OCR1A = OCR1A_next;	// when to run next time
-	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
+	OCR1A = bit_weight[bcm_ctr] + TCNT1;	// when to run next time
+
+	bcm_ctr++;		// modulo 12 takes too long
+	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
+		bcm_ctr = 0;
+	}
+
+	want_buffer_flip = 0;	// signal that a new BCM cycle is about to start
 #endif
 
 #ifdef V20alpha
@@ -917,14 +901,17 @@ void level_debug(void)
 {
 	uint8_t read = 0;
 	uint8_t ctr = 0;
+	uint8_t ctr_prev = 0;
 
 	Serial.begin(9600);
+
+	set_all_rgb(ctr, ctr, ctr, 1);
 
 	while (1) {
 		if (Serial.available()) {
 			switch (read = Serial.read()) {
 			case '+':
-				if (ctr < 63) {
+				if (ctr < MAX_BRIGHTNESS) {
 					ctr++;
 				}
 				break;
@@ -938,6 +925,9 @@ void level_debug(void)
 			}
 			Serial.println(ctr, BIN);
 		}
-		set_all_rgb(ctr, ctr, ctr, 1);
+		if (ctr != ctr_prev) {
+			set_all_rgb(ctr, ctr, ctr, 1);
+		}
+		ctr_prev = ctr;
 	}
 }
