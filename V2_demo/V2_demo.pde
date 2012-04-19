@@ -20,7 +20,7 @@
 
 // if COLOR_BIT_DEPTH and MAX_BRIGHTENSS (both at the same time!) are changed, this array must be adapted as well
 // it goes from 1 ... ( 2^ (COLOR_BIT_DEPTH-1) ) ... and symetrical back to 1
-uint8_t bit_weight[] = { 1, 2, 4, 8, 16, 32, 32, 16, 8, 4, 2, 1 };
+uint8_t bit_weight[] = { 4, 8, 16, 32, 64, 128, 128, 64, 32, 16, 8, 4 };
 
 uint8_t brightness_red[8];	/* memory for RED LEDs */
 uint8_t brightness_green[8];	/* memory for GREEN LEDs */
@@ -849,9 +849,6 @@ void flip_buffers(void)
 	default:
 		break;
 	}
-
-	TCNT1 = 0;		// clear timer to compensate for code runtime above
-	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
 
 	sei();
 }
