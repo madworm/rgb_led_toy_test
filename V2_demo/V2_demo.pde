@@ -658,8 +658,6 @@ ISR(TIMER1_COMPA_vect)
 	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
 		bcm_ctr = 0;
 	}
-
-	want_buffer_flip = 0;	// signal that a new BCM cycle is about to start
 #endif
 
 #ifdef V20beta
@@ -682,8 +680,6 @@ ISR(TIMER1_COMPA_vect)
 	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
 		bcm_ctr = 0;
 	}
-
-	want_buffer_flip = 0;	// signal that a new BCM cycle is about to start
 #endif
 
 #ifdef V20alpha
