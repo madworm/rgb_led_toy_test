@@ -12,6 +12,12 @@ function flash_bootloader {
 }
 
 case $1 in
+  avrispmkII)
+    BAUDRATE="115200"
+    PROGRAMMER=$1
+    PORT="usb"
+    flash_bootloader
+  ;;
   usbtiny)
     BAUDRATE="115200"
     PROGRAMMER=$1
@@ -25,7 +31,7 @@ case $1 in
     flash_bootloader
   ;;
   *)
-    echo -e  "\n usage: $0 usbtiny|arduinoisp port (default: /dev/ttyUSB0)
+    echo -e  "\n usage: $0 avrispmkII|usbtiny|arduinoisp port (default: /dev/ttyUSB0)
               \n"
   ;;
 esac
