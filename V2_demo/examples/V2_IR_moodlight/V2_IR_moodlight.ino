@@ -114,86 +114,84 @@ void loop(void)
 	if ((IR_code == VOL_UP) || (hue_plus_running == 1)) {
 		if ((IR_code == VOL_UP) && (hue_plus_running == 1)) {
 			hue_plus_running = 0;
-			return;
+		} else {
+			hue_plus_running = 1;
+			hue_minus_running = 0;
+			hue = (hue + HUE_STEP + 360) % 360;
+			set_all_hsv(hue, sat, val);
 		}
-		hue_plus_running = 1;
-		hue_minus_running = 0;
-		hue = (hue + HUE_STEP + 360) % 360;
-		set_all_hsv(hue, sat, val);
 	}
 
 	if ((IR_code == VOL_DOWN) || (hue_minus_running == 1)) {
 		if ((IR_code == VOL_DOWN) && (hue_minus_running == 1)) {
 			hue_minus_running = 0;
-			return;
+		} else {
+			hue_minus_running = 1;
+			hue_plus_running = 0;
+			hue = (hue - HUE_STEP + 360) % 360;
+			set_all_hsv(hue, sat, val);
 		}
-		hue_minus_running = 1;
-		hue_plus_running = 0;
-		hue = (hue - HUE_STEP + 360) % 360;
-		set_all_hsv(hue, sat, val);
 	}
 
 	if ((IR_code == ARROW_UP) || (val_plus_running == 1)) {
 		if ((IR_code == ARROW_UP) && (val_plus_running == 1)) {
 			val_plus_running = 0;
-			return;
-		}
-		val_plus_running = 1;
-		val_minus_running = 0;
-		if (val + VAL_STEP < 255) {
-			val = val + VAL_STEP;
 		} else {
-			val = 255;
+			val_plus_running = 1;
+			val_minus_running = 0;
+			if (val + VAL_STEP < 255) {
+				val = val + VAL_STEP;
+			} else {
+				val = 255;
+			}
+			set_all_hsv(hue, sat, val);
 		}
-		set_all_hsv(hue, sat, val);
 	}
 
 	if ((IR_code == ARROW_DOWN) || (val_minus_running == 1)) {
 		if ((IR_code == ARROW_DOWN) && (val_minus_running == 1)) {
 			val_minus_running = 0;
-			return;
-		}
-
-		val_minus_running = 1;
-		val_plus_running = 0;
-
-		if (val > VAL_STEP) {
-			val = val - VAL_STEP;
 		} else {
-			val = 0;
+			val_minus_running = 1;
+			val_plus_running = 0;
+
+			if (val > VAL_STEP) {
+				val = val - VAL_STEP;
+			} else {
+				val = 0;
+			}
+			set_all_hsv(hue, sat, val);
 		}
-		set_all_hsv(hue, sat, val);
 	}
 
 	if ((IR_code == ARROW_LEFT) || (sat_minus_running == 1)) {
 		if ((IR_code == ARROW_LEFT) && (sat_minus_running == 1)) {
 			sat_minus_running = 0;
-			return;
-		}
-
-		sat_minus_running = 1;
-		sat_plus_running = 0;
-		if (sat > SAT_STEP) {
-			sat = sat - SAT_STEP;
 		} else {
-			sat = 0;
+			sat_minus_running = 1;
+			sat_plus_running = 0;
+			if (sat > SAT_STEP) {
+				sat = sat - SAT_STEP;
+			} else {
+				sat = 0;
+			}
+			set_all_hsv(hue, sat, val);
 		}
-		set_all_hsv(hue, sat, val);
 	}
 
 	if ((IR_code == ARROW_RIGHT) || (sat_plus_running == 1)) {
 		if ((IR_code == ARROW_RIGHT) && (sat_plus_running == 1)) {
 			sat_plus_running = 0;
-			return;
-		}
-		sat_plus_running = 1;
-		sat_minus_running = 0;
-		if (sat + SAT_STEP < 255) {
-			sat = sat + SAT_STEP;
 		} else {
-			sat = 255;
+			sat_plus_running = 1;
+			sat_minus_running = 0;
+			if (sat + SAT_STEP < 255) {
+				sat = sat + SAT_STEP;
+			} else {
+				sat = 255;
+			}
+			set_all_hsv(hue, sat, val);
 		}
-		set_all_hsv(hue, sat, val);
 	}
 
 	IR_code = MISMATCH;
