@@ -39,7 +39,7 @@ unsigned char maxBrightness = 255;
 unsigned char pwmFrequency = 75;
 int numRegisters = 3;
 
-#define STARTUP_HUE 0U
+#define STARTUP_HUE 20U
 #define HUE_STEP 1U
 #define STARTUP_SAT 255U
 #define SAT_STEP 1U
@@ -61,6 +61,8 @@ void setup(void)
 #ifdef V20beta
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
+
+	DRIVER_ON;		// enable the LED drivers
 
 	//
 	// IR stuff
@@ -97,7 +99,7 @@ void loop(void)
 	static uint16_t hue = STARTUP_HUE;
 	static uint8_t sat = STARTUP_SAT;
 	static uint8_t val = STARTUP_VAL;
-	IR_code_t IR_code;
+	static IR_code_t IR_code = MISMATCH;
 	static uint8_t hue_plus_running = 0;
 	static uint8_t hue_minus_running = 0;
 	static uint8_t val_plus_running = 0;
@@ -206,11 +208,9 @@ void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
 	uint8_t led;
 	hsv2rgb(hue, sat, val, &red, &green, &blue, maxBrightness);
 
-	DRIVER_OFF;
 	for (led = 0; led < 8; led++) {
 		ShiftPWM.SetGroupOf3(led, red, green, blue);
 	}
-	DRIVER_ON;
 }
 
 //
