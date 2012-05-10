@@ -825,11 +825,10 @@
  *
  */
 
-#define NUMBER_OF_IR_CODES 7	// does not include the repeat-code, which I don't consider as a "full" code.
+#define NUMBER_OF_IR_CODES 6	// does not include the repeat-code, which I don't consider as a "full" code.
 
 const uint16_t PROGMEM IRsignals[NUMBER_OF_IR_CODES][72] = {
 	vol_down,
-	play_pause,
 	vol_up,
 	arrow_up,
 	arrow_down,
@@ -839,8 +838,7 @@ const uint16_t PROGMEM IRsignals[NUMBER_OF_IR_CODES][72] = {
 
 typedef enum {			// all elements EXCEPT (REPEAT_CODE, MISMATCH and NOT_SURE_YET) must be in the same
 	VOL_DOWN,		// order (if present at all) as in the PROGMEM array above! These 3 special elements
-	PLAY_PAUSE,		// must ALWAYS be there.
-	VOL_UP,
+	VOL_UP,			// must ALWAYS be there.
 	ARROW_UP,
 	ARROW_DOWN,
 	ARROW_LEFT,

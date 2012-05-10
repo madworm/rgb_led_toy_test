@@ -1,3 +1,11 @@
+/**
+* This runs with a TSOP38238 IR receiver + an IR remote control sending commands.
+*
+* For your type of remote you will have to adjust the settings in 'my_ir_codes.h'
+* You can get code to read the RAW IR data here: https://github.com/madworm/IR_remote
+*
+*/
+
 #define V20final
 //#define V20beta
 
@@ -6,7 +14,7 @@
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <util/atomic.h>
-#include "V2_demo.h"		// needed to make the 'enum' work with Arduino IDE (and other things)
+#include "V2_IR_moodlight.h"	// needed to make the 'enum' work with Arduino IDE (and other things)
 #include "my_ir_codes.h"
 #include <SPI.h>
 #include "hsv2rgb.h"
@@ -20,7 +28,7 @@ volatile uint16_t pulses_b[NUMPULSES];
 volatile uint16_t *pulses_write_to = pulses_a;
 volatile uint16_t *pulses_read_from = pulses_b;
 
-uint32_t last_IR_activity = 0;
+volatile uint32_t last_IR_activity = 0;
 
 //Data pin is MOSI (atmega168/328: pin 11. Mega: 51) 
 //Clock pin is SCK (atmega168/328: pin 13. Mega: 52)
@@ -33,12 +41,11 @@ int numRegisters = 3;
 
 #define STARTUP_HUE 0U
 #define HUE_STEP 1U
-
 #define STARTUP_SAT 255U
 #define SAT_STEP 1U
-
 #define STARTUP_VAL 16U
 #define VAL_STEP 1U
+#define LOOP_DELAY 50U
 
 #include <ShiftPWM.h>		// modified version! - include ShiftPWM.h after setting the pins!
 
@@ -87,100 +94,110 @@ void setup(void)
 
 void loop(void)
 {
-	static uint8_t state = 1;
 	static uint16_t hue = STARTUP_HUE;
 	static uint8_t sat = STARTUP_SAT;
 	static uint8_t val = STARTUP_VAL;
-	static uint16_t pulse_counter = 0;
+	IR_code_t IR_code;
+	static uint8_t hue_plus_running = 0;
+	static uint8_t hue_minus_running = 0;
+	static uint8_t val_plus_running = 0;
+	static uint8_t val_minus_running = 0;
+	static uint8_t sat_plus_running = 0;
+	static uint8_t sat_minus_running = 0;
+
 	if (IR_available()) {
-#ifdef DEBUG
-		Serial.print(F("\r\n\npulse #: "));
-#else
-		Serial.print(F("pulse #: "));
-#endif
-		Serial.print(pulse_counter);
-		Serial.print(F(" - "));
-		switch (eval_IR_code(pulses_read_from)) {
-		case VOL_DOWN:
-			hue = (hue - HUE_STEP + 360) % 360;
-			set_all_hsv(hue, sat, val);
-			Serial.print(F("HUE - : "));
-			Serial.print(hue);
-			break;
-		case PLAY_PAUSE:
-			switch (state) {
-			case 0:
-				state = 1;
-				set_all_hsv(hue, sat, val);
-				Serial.print(F("ON - "));
-				Serial.print(F("HUE : "));
-				Serial.print(hue);
-				Serial.print(F(" SAT : "));
-				Serial.print(sat);
-				Serial.print(F(" VAL : "));
-				Serial.print(val);
-				break;
-			case 1:
-				state = 0;
-				set_all_hsv(hue, sat, 0);
-				Serial.print(F("OFF"));
-				break;
-			default:
-				break;
-			}
-			break;
-		case VOL_UP:
-			hue = (hue + HUE_STEP + 360) % 360;
-			set_all_hsv(hue, sat, val);
-			Serial.print(F("HUE + : "));
-			Serial.print(hue);
-			break;
-		case ARROW_UP:
-			if (val + VAL_STEP < 255) {
-				val = val + VAL_STEP;
-			} else {
-				val = 255;
-			}
-			set_all_hsv(hue, sat, val);
-			Serial.print(F("VAL + : "));
-			Serial.print(val);
-			break;
-		case ARROW_DOWN:
-			if (val - VAL_STEP > 0) {
-				val = val - VAL_STEP;
-			} else {
-				val = 0;
-			}
-			set_all_hsv(hue, sat, val);
-			Serial.print(F("VAL - : "));
-			Serial.print(val);
-			break;
-		case ARROW_LEFT:
-			if (sat - SAT_STEP > 0) {
-				sat = sat - SAT_STEP;
-			} else {
-				sat = 0;
-			}
-			set_all_hsv(hue, sat, val);
-			Serial.print(F("SAT - : "));
-			Serial.print(sat);
-			break;
-		case ARROW_RIGHT:
-			if (sat + SAT_STEP < 255) {
-				sat = sat + SAT_STEP;
-			} else {
-				sat = 255;
-			}
-			set_all_hsv(hue, sat, val);
-			Serial.print(F("SAT - : "));
-			Serial.print(sat);
-			break;
-		default:
-			break;
-		}
-		Serial.println("");
-		pulse_counter++;
+		IR_code = eval_IR_code(pulses_read_from);
 	}
+
+	if ((IR_code == VOL_UP) || (hue_plus_running == 1)) {
+		if ((IR_code == VOL_UP) && (hue_plus_running == 1)) {
+			hue_plus_running = 0;
+			return;
+		}
+		hue_plus_running = 1;
+		hue_minus_running = 0;
+		hue = (hue + HUE_STEP + 360) % 360;
+		set_all_hsv(hue, sat, val);
+	}
+
+	if ((IR_code == VOL_DOWN) || (hue_minus_running == 1)) {
+		if ((IR_code == VOL_DOWN) && (hue_minus_running == 1)) {
+			hue_minus_running = 0;
+			return;
+		}
+		hue_minus_running = 1;
+		hue_plus_running = 0;
+		hue = (hue - HUE_STEP + 360) % 360;
+		set_all_hsv(hue, sat, val);
+	}
+
+	if ((IR_code == ARROW_UP) || (val_plus_running == 1)) {
+		if ((IR_code == ARROW_UP) && (val_plus_running == 1)) {
+			val_plus_running = 0;
+			return;
+		}
+		val_plus_running = 1;
+		val_minus_running = 0;
+		if (val + VAL_STEP < 255) {
+			val = val + VAL_STEP;
+		} else {
+			val = 255;
+		}
+		set_all_hsv(hue, sat, val);
+	}
+
+	if ((IR_code == ARROW_DOWN) || (val_minus_running == 1)) {
+		if ((IR_code == ARROW_DOWN) && (val_minus_running == 1)) {
+			val_minus_running = 0;
+			return;
+		}
+
+		val_minus_running = 1;
+		val_plus_running = 0;
+
+		if (val > VAL_STEP) {
+			val = val - VAL_STEP;
+		} else {
+			val = 0;
+		}
+		set_all_hsv(hue, sat, val);
+	}
+
+	if ((IR_code == ARROW_LEFT) || (sat_minus_running == 1)) {
+		if ((IR_code == ARROW_LEFT) && (sat_minus_running == 1)) {
+			sat_minus_running = 0;
+			return;
+		}
+
+		sat_minus_running = 1;
+		sat_plus_running = 0;
+		if (sat > SAT_STEP) {
+			sat = sat - SAT_STEP;
+		} else {
+			sat = 0;
+		}
+		set_all_hsv(hue, sat, val);
+	}
+
+	if ((IR_code == ARROW_RIGHT) || (sat_plus_running == 1)) {
+		if ((IR_code == ARROW_RIGHT) && (sat_plus_running == 1)) {
+			sat_plus_running = 0;
+			return;
+		}
+		sat_plus_running = 1;
+		sat_minus_running = 0;
+		if (sat + SAT_STEP < 255) {
+			sat = sat + SAT_STEP;
+		} else {
+			sat = 255;
+		}
+		set_all_hsv(hue, sat, val);
+	}
+
+	IR_code = MISMATCH;
+
+	delay(LOOP_DELAY);
+
 }
 
 void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
