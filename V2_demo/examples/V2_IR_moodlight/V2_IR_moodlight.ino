@@ -2,6 +2,8 @@
 * This runs with a TSOP38238 IR receiver + an IR remote control sending commands.
 *
 * For your type of remote you will have to adjust the settings in 'my_ir_codes.h'
+* The codes in there are for this IR remote: https://www.adafruit.com/products/389
+*
 * You can get code to read the RAW IR data here: https://github.com/madworm/IR_remote
 *
 */
