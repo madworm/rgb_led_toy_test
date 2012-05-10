@@ -32,8 +32,13 @@ unsigned char pwmFrequency = 75;
 int numRegisters = 3;
 
 #define STARTUP_HUE 0U
+#define HUE_STEP 1U
+
 #define STARTUP_SAT 255U
+#define SAT_STEP 1U
+
 #define STARTUP_VAL 16U
+#define VAL_STEP 1U
 
 #include <ShiftPWM.h>		// modified version! - include ShiftPWM.h after setting the pins!
 
@@ -97,7 +102,7 @@ void loop(void)
 		Serial.print(F(" - "));
 		switch (eval_IR_code(pulses_read_from)) {
 		case VOL_DOWN:
-			hue = (hue - 8 + 360) % 360;
+			hue = (hue - HUE_STEP + 360) % 360;
 			set_all_hsv(hue, sat, val);
 			Serial.print(F("HUE - : "));
 			Serial.print(hue);
@@ -125,14 +130,14 @@ void loop(void)
 			}
 			break;
 		case VOL_UP:
-			hue = (hue + 8 + 360) % 360;
+			hue = (hue + HUE_STEP + 360) % 360;
 			set_all_hsv(hue, sat, val);
 			Serial.print(F("HUE + : "));
 			Serial.print(hue);
 			break;
 		case ARROW_UP:
-			if (val + 8 < 255) {
-				val = val + 8;
+			if (val + VAL_STEP < 255) {
+				val = val + VAL_STEP;
 			} else {
 				val = 255;
 			}
@@ -141,8 +146,8 @@ void loop(void)
 			Serial.print(val);
 			break;
 		case ARROW_DOWN:
-			if (val - 8 > 0) {
-				val = val - 8;
+			if (val - VAL_STEP > 0) {
+				val = val - VAL_STEP;
 			} else {
 				val = 0;
 			}
@@ -151,8 +156,8 @@ void loop(void)
 			Serial.print(val);
 			break;
 		case ARROW_LEFT:
-			if (sat - 8 > 0) {
-				sat = sat - 8;
+			if (sat - SAT_STEP > 0) {
+				sat = sat - SAT_STEP;
 			} else {
 				sat = 0;
 			}
@@ -161,8 +166,8 @@ void loop(void)
 			Serial.print(sat);
 			break;
 		case ARROW_RIGHT:
-			if (sat + 8 < 255) {
-				sat = sat + 8;
+			if (sat + SAT_STEP < 255) {
+				sat = sat + SAT_STEP;
 			} else {
 				sat = 255;
 			}

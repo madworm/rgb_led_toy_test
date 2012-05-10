@@ -12,6 +12,13 @@ function flash_bootloader {
 }
 
 case $2 in
+  avrispmkII)
+    BAUDRATE="115200"
+    PROGRAMMER=$2
+    PORT="usb"
+    HEXFILE=$1
+    flash_bootloader
+  ;;
   usbtiny)
     BAUDRATE="115200"
     PROGRAMMER=$2
@@ -27,7 +34,7 @@ case $2 in
     flash_bootloader
   ;;
   *)
-    echo -e  "\n usage: $0 hexfile usbtiny|arduinoisp port (default: /dev/ttyUSB0)
+    echo -e  "\n usage: $0 hexfile avrispmkII|usbtiny|arduinoisp port (default: /dev/ttyUSB0)
               \n"
   ;;
 esac
