@@ -59,7 +59,7 @@ void setup(void)
 #ifdef V2_1
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5);	// set LATCH, MOSI, SCK as outputs
 	analogWrite(6, 255);	// little LEDs off - this also sets output direction
-	analogWrite(5, 0);	// on - do this once so PWM is setup for that pin.
+	analogWrite(3, 0);	// on - do this once so PWM is setup for that pin.
 #endif
 
 #ifdef V20final
