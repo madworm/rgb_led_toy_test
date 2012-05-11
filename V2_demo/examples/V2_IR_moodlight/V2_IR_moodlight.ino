@@ -58,9 +58,9 @@ void setup(void)
 #ifdef V2_1
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5);	// set LATCH, MOSI, SCK as outputs
 	analogWrite(6, 255);	// small LEDs off
-	analogWrite(3, (255-STARTUP_VAL));	// LED driver chips on
-        TCCR2B &= ~_BV(CS22); // change TIMER2 prescaler to DIV1 for higher PWM frequency (16kHz instead of 250Hz --> less beating)
-        TCCR2B |= _BV(CS20);
+	analogWrite(3, (255 - STARTUP_VAL));	// LED driver chips on
+	TCCR2B &= ~_BV(CS22);	// change TIMER2 prescaler to DIV1 for higher PWM frequency (16kHz instead of 250Hz --> less beating)
+	TCCR2B |= _BV(CS20);
 #endif
 
 #ifdef V20final
@@ -174,7 +174,7 @@ void loop(void)
 			val_plus_running = 0;
 #ifdef V2_1
 			if (OCR2B + VAL_STEP < 255) {
-                                OCR2B += VAL_STEP;
+				OCR2B += VAL_STEP;
 			} else {
 				OCR2B = 255;
 			}
@@ -229,11 +229,11 @@ void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
 {
 	uint8_t red, green, blue;
 	uint8_t led;
-        #ifdef V2_1
-	hsv2rgb(hue, sat, 255, &red, &green, &blue, maxBrightness);        
-        #else
+#ifdef V2_1
+	hsv2rgb(hue, sat, 255, &red, &green, &blue, maxBrightness);
+#else
 	hsv2rgb(hue, sat, val, &red, &green, &blue, maxBrightness);
-        #endif
+#endif
 	for (led = 0; led < 8; led++) {
 		ShiftPWM.SetGroupOf3(led, red, green, blue);
 	}
