@@ -2,6 +2,7 @@
  * 2012 - robert:aT:spitzenpfeil_d*t:org - RGB_LED_Ring Demo
  */
 
+//#define V2_1
 #define V20final
 //#define V20beta
 //#define V20alpha
@@ -55,6 +56,12 @@ volatile uint8_t want_buffer_flip;
 void setup(void)
 {
 
+#ifdef V2_1
+	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5);	// set LATCH, MOSI, SCK as outputs
+	analogWrite(6, 255);	// litle LEDs off - this also sets output direction
+	analogWrite(5, 254);	// on - do this once so PWM is setup for that pin.
+#endif
+
 #ifdef V20final
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 	DDRD |= _BV(PD6);	// same as pinMode(6,OUTPUT);
@@ -80,7 +87,7 @@ void loop(void)
 {
 	uint16_t ctr = 0;
 
-#ifdef V20final
+#if defined(V20final) || defined( V2_1)
 	uint8_t ctr2;
 	set_all_rgb(63, 0, 0, 1);
 	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
@@ -602,7 +609,7 @@ void setup_timer1_ctc(void)
 	uint8_t _sreg = SREG;	/* save SREG */
 	cli();			/* disable all interrupts while messing with the register setup */
 
-#ifdef V20final
+#if defined(V20final) || defined(V2_1)
 	/* set prescaler to 64 */
 	TCCR1B |= (_BV(CS11) | _BV(CS10));
 	TCCR1B &= ~(_BV(CS12));
@@ -636,9 +643,7 @@ void setup_timer1_ctc(void)
 
 ISR(TIMER1_COMPA_vect)
 {
-	DRIVER_OFF;
-
-#ifdef V20final
+#ifdef V2_1
 	static uint8_t bcm_ctr = 0;
 
 	LATCH_LOW;
@@ -658,9 +663,36 @@ ISR(TIMER1_COMPA_vect)
 	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
 		bcm_ctr = 0;
 	}
+#endif
+
+#ifdef V20final
+	DRIVER_OFF;
+
+	static uint8_t bcm_ctr = 0;
+
+	LATCH_LOW;
+	//
+	// if colors are swapped, permutate the 3 spi_transfer(...) lines to
+	// correct for the kind of RGB LED you use.
+	//
+	spi_transfer(sbcm_blue_live[bcm_ctr]);	//  pull pre-calculated data from RAM
+	spi_transfer(sbcm_green_live[bcm_ctr]);
+	spi_transfer(sbcm_red_live[bcm_ctr]);
+	LATCH_HIGH;
+
+	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
+	OCR1A = bit_weight[bcm_ctr] + TCNT1;	// when to run next time
+
+	bcm_ctr++;		// modulo 12 takes too long
+	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
+		bcm_ctr = 0;
+	}
+	DRIVER_ON;
 #endif
 
 #ifdef V20beta
+	DRIVER_OFF;
+
 	static uint8_t bcm_ctr = 0;
 
 	LATCH_LOW;
@@ -680,9 +712,13 @@ ISR(TIMER1_COMPA_vect)
 	if (bcm_ctr == 2 * COLOR_BIT_DEPTH) {
 		bcm_ctr = 0;
 	}
+
+	DRIVER_ON;
 #endif
 
 #ifdef V20alpha
+	DRIVER_OFF;
+
 	static uint8_t bcm_ctr = 0;
 	static uint8_t color = 0;
 	uint8_t bcm_data = 0;
@@ -738,10 +774,11 @@ ISR(TIMER1_COMPA_vect)
 	OCR1A = OCR1A_next;	// when to run next time
 	TCNT1 = 0;		// clear timer to compensate for code runtime above
 	TIFR1 = _BV(OCF1A);	// clear interrupt flag to kill any erroneously pending interrupt in the queue
+
+	DRIVER_ON;
 #endif
 
 	want_buffer_flip = 0;	// signal that a new BCM cycle is about to start
-	DRIVER_ON;
 }
 
 void flip_buffers(void)
