@@ -8,6 +8,7 @@
 *
 */
 
+//#define V2_1
 #define V20final
 //#define V20beta
 
@@ -54,17 +55,22 @@ int numRegisters = 3;
 void setup(void)
 {
 
+#ifdef V2_1
+	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5);	// set LATCH, MOSI, SCK as outputs
+	analogWrite(6, 255);	// small LEDs off
+	analogWrite(5, 0);	// LED driver chips on
+#endif
+
 #ifdef V20final
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
-	DDRD |= _BV(PD6);	// same as pinMode(6,OUTPUT);
-	analogWrite(6, 255);	// off
+	analogWrite(6, 255);	// small LEDs off off
+	DRIVER_ON;		// LED driver chips on
 #endif
 
 #ifdef V20beta
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
+	DRIVER_ON;		// LED driver chips on
 #endif
-
-	DRIVER_ON;		// enable the LED drivers
 
 	//
 	// IR stuff
@@ -156,7 +162,6 @@ void loop(void)
 		} else {
 			val_minus_running = 1;
 			val_plus_running = 0;
-
 			if (val > VAL_STEP) {
 				val = val - VAL_STEP;
 			} else {
@@ -207,7 +212,6 @@ void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
 	uint8_t red, green, blue;
 	uint8_t led;
 	hsv2rgb(hue, sat, val, &red, &green, &blue, maxBrightness);
-
 	for (led = 0; led < 8; led++) {
 		ShiftPWM.SetGroupOf3(led, red, green, blue);
 	}
