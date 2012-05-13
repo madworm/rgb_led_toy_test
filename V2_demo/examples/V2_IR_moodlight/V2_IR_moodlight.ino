@@ -8,8 +8,8 @@
 *
 */
 
-#define V2_1
-//#define V20final
+//#define V2_1
+#define V20final
 //#define V20beta
 
 #include <stdint.h>
@@ -44,11 +44,17 @@ int numRegisters = 3;
 
 #define STARTUP_HUE 20U
 #define HUE_STEP 1U
+#define HUE_DELAY 200U
+
 #define STARTUP_SAT 255U
 #define SAT_STEP 1U
+#define SAT_DELAY 50U
+
 #define STARTUP_VAL 16U
 #define VAL_STEP 1U
-#define LOOP_DELAY 100U
+#define VAL_DELAY 50U
+
+#define FADE_DELAY 20U
 
 #include <ShiftPWM.h>		// modified version! - include ShiftPWM.h after setting the pins!
 
@@ -109,15 +115,24 @@ void loop(void)
 	static uint16_t hue = STARTUP_HUE;
 	static uint8_t sat = STARTUP_SAT;
 	static uint8_t val = STARTUP_VAL;
+
 	static IR_code_t IR_code = MISMATCH;
+
 	static uint8_t fade_to_color_running = 0;
 	static uint16_t fade_to_hue = 0;
+	static uint32_t last_fade = 0;
+
 	static uint8_t hue_plus_running = 0;
 	static uint8_t hue_minus_running = 0;
+	static uint32_t last_hue_change = 0;
+
 	static uint8_t val_plus_running = 0;
 	static uint8_t val_minus_running = 0;
+	static uint32_t last_val_change = 0;
+
 	static uint8_t sat_plus_running = 0;
 	static uint8_t sat_minus_running = 0;
+	static uint32_t last_sat_change = 0;
 
 	if (IR_available()) {
 		IR_code = eval_IR_code(pulses_read_from);
@@ -129,8 +144,11 @@ void loop(void)
 		} else {
 			hue_plus_running = 1;
 			hue_minus_running = 0;
-			hue = (hue + HUE_STEP + 360) % 360;
-			set_all_hsv(hue, sat, val);
+			if ((millis() - last_hue_change) > HUE_DELAY) {
+				hue = (hue + HUE_STEP + 360) % 360;
+				set_all_hsv(hue, sat, val);
+				last_hue_change = millis();
+			}
 		}
 	}
 
@@ -140,8 +158,11 @@ void loop(void)
 		} else {
 			hue_minus_running = 1;
 			hue_plus_running = 0;
-			hue = (hue - HUE_STEP + 360) % 360;
-			set_all_hsv(hue, sat, val);
+			if ((millis() - last_hue_change) > HUE_DELAY) {
+				hue = (hue - HUE_STEP + 360) % 360;
+				set_all_hsv(hue, sat, val);
+				last_hue_change = millis();
+			}
 		}
 	}
 
@@ -151,20 +172,23 @@ void loop(void)
 		} else {
 			val_plus_running = 1;
 			val_minus_running = 0;
+			if ((millis() - last_val_change) > VAL_DELAY) {
 #ifdef V2_1
-			if (OCR2B > VAL_STEP) {
-				OCR2B -= VAL_STEP;
-			} else {
-				OCR2B = 0;
-			}
+				if (OCR2B > VAL_STEP) {
+					OCR2B -= VAL_STEP;
+				} else {
+					OCR2B = 0;
+				}
 #else
-			if (val + VAL_STEP < 255) {
-				val = val + VAL_STEP;
-			} else {
-				val = 255;
-			}
+				if (val + VAL_STEP < 255) {
+					val = val + VAL_STEP;
+				} else {
+					val = 255;
+				}
 #endif
-			set_all_hsv(hue, sat, val);
+				set_all_hsv(hue, sat, val);
+				last_val_change = millis();
+			}
 		}
 	}
 
@@ -174,20 +198,23 @@ void loop(void)
 		} else {
 			val_minus_running = 1;
 			val_plus_running = 0;
+			if ((millis() - last_val_change) > VAL_DELAY) {
 #ifdef V2_1
-			if (OCR2B + VAL_STEP < 255) {
-				OCR2B += VAL_STEP;
-			} else {
-				OCR2B = 255;
-			}
+				if (OCR2B + VAL_STEP < 255) {
+					OCR2B += VAL_STEP;
+				} else {
+					OCR2B = 255;
+				}
 #else
-			if (val > VAL_STEP) {
-				val = val - VAL_STEP;
-			} else {
-				val = 0;
-			}
+				if (val > VAL_STEP) {
+					val = val - VAL_STEP;
+				} else {
+					val = 0;
+				}
 #endif
-			set_all_hsv(hue, sat, val);
+				set_all_hsv(hue, sat, val);
+				last_val_change = millis();
+			}
 		}
 	}
 
@@ -197,12 +224,15 @@ void loop(void)
 		} else {
 			sat_minus_running = 1;
 			sat_plus_running = 0;
-			if (sat > SAT_STEP) {
-				sat = sat - SAT_STEP;
-			} else {
-				sat = 0;
+			if (millis() - last_sat_change > SAT_DELAY) {
+				if (sat > SAT_STEP) {
+					sat = sat - SAT_STEP;
+				} else {
+					sat = 0;
+				}
+				set_all_hsv(hue, sat, val);
+				last_sat_change = millis();
 			}
-			set_all_hsv(hue, sat, val);
 		}
 	}
 
@@ -212,67 +242,90 @@ void loop(void)
 		} else {
 			sat_plus_running = 1;
 			sat_minus_running = 0;
-			if (sat + SAT_STEP < 255) {
-				sat = sat + SAT_STEP;
-			} else {
-				sat = 255;
+			if (millis() - last_sat_change > SAT_DELAY) {
+				if (sat + SAT_STEP < 255) {
+					sat = sat + SAT_STEP;
+				} else {
+					sat = 255;
+				}
+				set_all_hsv(hue, sat, val);
+				last_sat_change = millis();
 			}
-			set_all_hsv(hue, sat, val);
 		}
 	}
 
 	if ((IR_code == DIGIT_1) || (IR_code == DIGIT_2) || (IR_code == DIGIT_3)
 	    || (IR_code == DIGIT_4) || (IR_code == DIGIT_5)
 	    || (IR_code == DIGIT_6) || (fade_to_color_running == 1)) {
-		fade_to_color_running = 1;
-		hue_plus_running = 0;
-		hue_minus_running = 0;
-		switch (IR_code) {
-		case DIGIT_1:
-			fade_to_hue = 0;	// red
-			break;
-		case DIGIT_2:
-			fade_to_hue = 120;	// green
-			break;
-		case DIGIT_3:
-			fade_to_hue = 240;	// blue
-			break;
-		case DIGIT_4:
-			fade_to_hue = 60;	// yellow
-			break;
-		case DIGIT_5:
-			fade_to_hue = 180;	// torqoise
-			break;
-		case DIGIT_6:
-			fade_to_hue = 300;	// pink
-			break;
-		default:
-			break;
-		}
-		if (fade_to_hue == hue) {
-			fade_to_color_running = 0;
-		}
-		if (fade_to_hue > hue) {
-			if (hue + HUE_STEP < fade_to_hue) {
-				hue = (hue + HUE_STEP + 360) % 360;
-			} else {
-				hue = fade_to_hue;
+		if ((millis() - last_fade) > FADE_DELAY) {
+			fade_to_color_running = 1;
+			hue_plus_running = 0;
+			hue_minus_running = 0;
+			switch (IR_code) {
+			case DIGIT_1:
+				fade_to_hue = 0;	// red
+				break;
+			case DIGIT_2:
+				fade_to_hue = 120;	// green
+				break;
+			case DIGIT_3:
+				fade_to_hue = 240;	// blue
+				break;
+			case DIGIT_4:
+				fade_to_hue = 60;	// yellow
+				break;
+			case DIGIT_5:
+				fade_to_hue = 180;	// torqoise
+				break;
+			case DIGIT_6:
+				fade_to_hue = 300;	// pink
+				break;
+			default:
+				break;
 			}
-		}
-		if (fade_to_hue < hue) {
-			if (hue > fade_to_hue + HUE_STEP) {
-				hue = (hue - HUE_STEP + 360) % 360;
-			} else {
-				hue = fade_to_hue;
+			if (fade_to_hue == hue) {
+				fade_to_color_running = 0;
 			}
+			if (fade_to_hue > hue) {
+				if ((fade_to_hue - hue) > 180) {	// going left is shorter
+					// fade left
+					if ((360 - (fade_to_hue - hue)) > HUE_STEP) {	// check 'left-distance' for overshooting
+						hue = (hue - HUE_STEP + 360) % 360;	// if not, do it
+					} else {
+						hue = fade_to_hue;	// if yes, go there right away
+					}
+				} else {
+					// fade right 
+					if ((fade_to_hue - hue) > HUE_STEP) {	// check 'right-distance' for overshooting
+						hue = (hue + HUE_STEP + 360) % 360;	// if not, do it                          
+					} else {
+						hue = fade_to_hue;	// if yes, go there directly
+					}
+				}
+			}
+			if (fade_to_hue < hue) {
+				if ((hue - fade_to_hue) > 180) {	// going right is shorter
+					// fade right 
+					if ((360 - (hue - fade_to_hue)) > HUE_STEP) {	// check 'right-distance' for overshooting
+						hue = (hue + HUE_STEP + 360) % 360;	// it not, do it           
+					} else {
+						hue = fade_to_hue;	// go there directly
+					}
+				} else {
+					// fade left 
+					if ((hue - fade_to_hue) > HUE_STEP) {	// check 'left-distance' for overshooting
+						hue = (hue - HUE_STEP + 360) % 360;	// if not, do it
+					} else {
+						hue = fade_to_hue;	// go there directly
+					}
+				}
+			}
+			set_all_hsv(hue, sat, val);
+			last_fade = millis();
 		}
-		set_all_hsv(hue, sat, val);
 	}
 
 	IR_code = MISMATCH;
-
-	delay(LOOP_DELAY);
-
 }
 
 void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
