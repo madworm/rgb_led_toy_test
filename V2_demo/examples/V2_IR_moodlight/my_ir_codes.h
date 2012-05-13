@@ -825,7 +825,7 @@
  *
  */
 
-#define NUMBER_OF_IR_CODES 6	// does not include the repeat-code, which I don't consider as a "full" code.
+#define NUMBER_OF_IR_CODES 12	// does not include the repeat-code, which I don't consider as a "full" code.
 
 const uint16_t PROGMEM IRsignals[NUMBER_OF_IR_CODES][72] = {
 	vol_down,
@@ -834,6 +834,12 @@ const uint16_t PROGMEM IRsignals[NUMBER_OF_IR_CODES][72] = {
 	arrow_down,
 	arrow_left,
 	arrow_right,
+	digit_1,
+	digit_2,
+	digit_3,
+	digit_4,
+	digit_5,
+	digit_6,
 };
 
 typedef enum {			// all elements EXCEPT (REPEAT_CODE, MISMATCH and NOT_SURE_YET) must be in the same
@@ -843,6 +849,12 @@ typedef enum {			// all elements EXCEPT (REPEAT_CODE, MISMATCH and NOT_SURE_YET)
 	ARROW_DOWN,
 	ARROW_LEFT,
 	ARROW_RIGHT,
+	DIGIT_1,
+	DIGIT_2,
+	DIGIT_3,
+	DIGIT_4,
+	DIGIT_5,
+	DIGIT_6,
 	// DO NOT EDIT THESE LAST 3!
 	REPEAT_CODE = 66,
 	MISMATCH = 77,		// only returned if something goes terribly wrong

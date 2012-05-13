@@ -8,8 +8,8 @@
 *
 */
 
-//#define V2_1
-#define V20final
+#define V2_1
+//#define V20final
 //#define V20beta
 
 #include <stdint.h>
@@ -110,6 +110,8 @@ void loop(void)
 	static uint8_t sat = STARTUP_SAT;
 	static uint8_t val = STARTUP_VAL;
 	static IR_code_t IR_code = MISMATCH;
+	static uint8_t fade_to_color_running = 0;
+	static uint16_t fade_to_hue = 0;
 	static uint8_t hue_plus_running = 0;
 	static uint8_t hue_minus_running = 0;
 	static uint8_t val_plus_running = 0;
@@ -217,6 +219,54 @@ void loop(void)
 			}
 			set_all_hsv(hue, sat, val);
 		}
+	}
+
+	if ((IR_code == DIGIT_1) || (IR_code == DIGIT_2) || (IR_code == DIGIT_3)
+	    || (IR_code == DIGIT_4) || (IR_code == DIGIT_5)
+	    || (IR_code == DIGIT_6) || (fade_to_color_running == 1)) {
+		fade_to_color_running = 1;
+		hue_plus_running = 0;
+		hue_minus_running = 0;
+		switch (IR_code) {
+		case DIGIT_1:
+			fade_to_hue = 0;	// red
+			break;
+		case DIGIT_2:
+			fade_to_hue = 120;	// green
+			break;
+		case DIGIT_3:
+			fade_to_hue = 240;	// blue
+			break;
+		case DIGIT_4:
+			fade_to_hue = 60;	// yellow
+			break;
+		case DIGIT_5:
+			fade_to_hue = 180;	// torqoise
+			break;
+		case DIGIT_6:
+			fade_to_hue = 300;	// pink
+			break;
+		default:
+			break;
+		}
+		if (fade_to_hue == hue) {
+			fade_to_color_running = 0;
+		}
+		if (fade_to_hue > hue) {
+			if (hue + HUE_STEP < fade_to_hue) {
+				hue = (hue + HUE_STEP + 360) % 360;
+			} else {
+				hue = fade_to_hue;
+			}
+		}
+		if (fade_to_hue < hue) {
+			if (hue > fade_to_hue + HUE_STEP) {
+				hue = (hue - HUE_STEP + 360) % 360;
+			} else {
+				hue = fade_to_hue;
+			}
+		}
+		set_all_hsv(hue, sat, val);
 	}
 
 	IR_code = MISMATCH;
