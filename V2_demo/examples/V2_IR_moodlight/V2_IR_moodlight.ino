@@ -9,8 +9,8 @@
 */
 
 //#define V2_1
-#define V20final
-//#define V20beta
+#define V2_0_d
+//#define V2_0_beta
 
 #include <stdint.h>
 #include <avr/io.h>
@@ -69,13 +69,13 @@ void setup(void)
 	TCCR2B |= _BV(CS20);
 #endif
 
-#ifdef V20final
+#ifdef V2_0_d
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 	analogWrite(6, 255);	// small LEDs off off
 	DRIVER_ON;		// LED driver chips on
 #endif
 
-#ifdef V20beta
+#ifdef V2_0_beta
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 	DRIVER_ON;		// LED driver chips on
 #endif

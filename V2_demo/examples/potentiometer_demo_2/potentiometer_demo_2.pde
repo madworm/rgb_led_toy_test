@@ -6,10 +6,10 @@
 // the middle connector (#2, wiper) to ANALOG PIN #3 (PC3)
 // the remaining connector (#3) to GND
 
-#define V20beta
-//#define V20alpha
+#define V2_0_beta
+//#define V2_0_alpha
 
-#ifdef V20alpha
+#ifdef V2_0_alpha
 #define DOTCORR
 #endif
 
@@ -54,12 +54,12 @@ int high_limit;
 
 void setup(void)
 {
-#ifdef V20alpha
+#ifdef V2_0_alpha
 	DDRD |= _BV(RED_GATE) | _BV(GREEN_GATE) | _BV(BLUE_GATE);	// P-MOSFET gates as outputs
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
 
-#ifdef V20beta
+#ifdef V2_0_beta
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
 
@@ -353,7 +353,7 @@ void setup_timer1_ctc(void)
 ISR(TIMER1_COMPA_vect)
 {
 	DRIVER_OFF;
-#ifdef V20alpha
+#ifdef V2_0_alpha
 
 	uint8_t led = 0;
 	uint8_t bcm_data = 0;
@@ -423,7 +423,7 @@ ISR(TIMER1_COMPA_vect)
 
 #endif
 
-#ifdef V20beta
+#ifdef V2_0_beta
 	uint8_t led = 0;
 	uint8_t bcm_red = 0;
 	uint8_t bcm_green = 0;

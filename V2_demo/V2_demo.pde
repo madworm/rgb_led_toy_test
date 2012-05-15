@@ -3,11 +3,11 @@
  */
 
 //#define V2_1
-#define V20final
-//#define V20beta
-//#define V20alpha
+#define V2_0_d
+//#define V2_0_beta
+//#define V2_0_alpha
 
-#ifdef V20alpha
+#ifdef V2_0_alpha
 #define DOTCORR
 #endif
 
@@ -62,16 +62,16 @@ void setup(void)
 	analogWrite(3, 0);	// on - do this once so PWM is setup for that pin.
 #endif
 
-#ifdef V20final
+#ifdef V2_0_d
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 	analogWrite(6, 255);	// off
 #endif
 
-#ifdef V20beta
+#ifdef V2_0_beta
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
 
-#ifdef V20alpha
+#ifdef V2_0_alpha
 	DDRD |= _BV(RED_GATE) | _BV(GREEN_GATE) | _BV(BLUE_GATE);	// P-MOSFET gates as outputs
 	DDRB |= _BV(PB2) | _BV(PB3) | _BV(PB5) | _BV(PB6);	// set LATCH, MOSI, SCK, OE as outputs
 #endif
@@ -86,7 +86,7 @@ void loop(void)
 {
 	uint16_t ctr = 0;
 
-#if defined(V20final) || defined( V2_1)
+#if defined(V2_0_d) || defined(V2_1)
 	uint8_t ctr2;
 	set_all_rgb(63, 0, 0, 1);
 	for (ctr2 = 0; ctr2 <= 2; ctr2++) {
@@ -608,19 +608,19 @@ void setup_timer1_ctc(void)
 	uint8_t _sreg = SREG;	/* save SREG */
 	cli();			/* disable all interrupts while messing with the register setup */
 
-#if defined(V20final) || defined(V2_1)
+#if defined(V2_0_d) || defined(V2_1)
 	/* set prescaler to 64 */
 	TCCR1B |= (_BV(CS11) | _BV(CS10));
 	TCCR1B &= ~(_BV(CS12));
 #endif
 
-#ifdef V20beta
+#ifdef V2_0_beta
 	/* set prescaler to 64 */
 	TCCR1B |= (_BV(CS11) | _BV(CS10));
 	TCCR1B &= ~(_BV(CS12));
 #endif
 
-#ifdef V20alpha
+#ifdef V2_0_alpha
 	/* set prescaler to 64 */
 	TCCR1B |= (_BV(CS11) | _BV(CS10));
 	TCCR1B &= ~(_BV(CS12));
@@ -664,7 +664,7 @@ ISR(TIMER1_COMPA_vect)
 	}
 #endif
 
-#ifdef V20final
+#ifdef V2_0_d
 	DRIVER_OFF;
 
 	static uint8_t bcm_ctr = 0;
@@ -689,7 +689,7 @@ ISR(TIMER1_COMPA_vect)
 	DRIVER_ON;
 #endif
 
-#ifdef V20beta
+#ifdef V2_0_beta
 	DRIVER_OFF;
 
 	static uint8_t bcm_ctr = 0;
@@ -715,7 +715,7 @@ ISR(TIMER1_COMPA_vect)
 	DRIVER_ON;
 #endif
 
-#ifdef V20alpha
+#ifdef V2_0_alpha
 	DRIVER_OFF;
 
 	static uint8_t bcm_ctr = 0;
