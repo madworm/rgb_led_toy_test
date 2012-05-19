@@ -5,11 +5,14 @@
 If you need super-smooth color fading, please use the Arduino 'ShiftPWM' library.
 Version 1.03 works with the Arduino IDE V0023 (tested).
 
-Download location: http://code.google.com/p/shiftpwm/downloads/list
+( Download location of the original version : http://code.google.com/p/shiftpwm/downloads/list )
 
 
 There are a few short modifications to make it work:
 ----------------------------------------------------
+
+0.) There is an already modified version in the '/libraries' subfolder.
+    If you use it, skip steps #1 and #2. Continue with #3.
 
 1.) Open the file 'CShiftPWM.cpp' in the library folder.
 
