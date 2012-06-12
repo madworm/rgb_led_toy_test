@@ -23,7 +23,7 @@ int numRegisters = 3;
 
 #include <ShiftPWM.h>		// modified version! - include ShiftPWM.h after setting the pins!
 
-//========================BLONE stuff =====================
+//===================== AMBLONE stuff =====================
 //  partially based on code  availabe at:                // 
 //  http://amblone.com/download                          //
 //=========================================================
