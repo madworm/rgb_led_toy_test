@@ -8,8 +8,8 @@
 *
 */
 
-//#define V2_1
-#define V2_0_d
+#define V2_1
+//#define V2_0_d
 //#define V2_0_beta
 
 #include <stdint.h>
@@ -87,11 +87,16 @@ void setup(void)
 	Serial.println(F("Ready to decode IR!"));
 	zero_pulses(pulses_read_from);
 	zero_pulses(pulses_write_to);
+#ifdef V2_1
+        DDRD &= ~_BV(PD2); // set as input to read IR sensor
+        PCICR |= _BV(PCIE2); // enable pin-change interrupt for pin-group #2
+        PCMSK2 |= _BV(PCINT18); // select PD2 as pin-change interrupt source
+#else
 	DDRC &= ~_BV(PC5);	// PC5 as input (arduino pin A5 / SCL)
 	PORTC |= _BV(PC5);	// pull-up on
-
 	PCICR |= _BV(PCIE1);	// enable pin-change interrupt for pin-group 1
-	PCMSK1 |= _BV(PCINT13);	// enable pin-change interrupt por pin PC5 (PCINT13)  
+	PCMSK1 |= _BV(PCINT13);	// enable pin-change interrupt for pin-group #1
+#endif
 
 	//
 	// ShiftPWM stuff
@@ -346,7 +351,11 @@ void set_all_hsv(uint16_t hue, uint16_t sat, uint16_t val)
 // IR stuff
 //
 
+#ifdef V2_1
+ISR(PCINT2_vect)
+#else
 ISR(PCINT1_vect)
+#endif
 {
 	static uint8_t pulse_counter = 0;
 	static uint32_t last_run = 0;
