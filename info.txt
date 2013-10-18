@@ -4,4 +4,4 @@ Contents:
 * setup-files:   arduino board integration data and other things
 * V1_demo:       code for older V1.x boards
 * V2_demo:	 code for V2.x boards
-
+* V3_demo:	 code for V3.x boards (WS2812B)
