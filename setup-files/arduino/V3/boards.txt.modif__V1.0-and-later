@@ -1,0 +1,61 @@
+#
+# add this to the 'boards.txt' of your arduino software
+#
+#
+
+##############################################################
+#
+# to activate this board, select it and use:
+#
+# 'Burn Bootloader' just once
+# Make sure to select your programmer type in the menu!
+# this makes sure the correct FUSE settings are used
+#
+RGBLedRingV3-A.name=RGB LED RING V3 - ATmega168 / 16MHz Quartz / Optiboot [default]
+RGBLedRingV3-A.upload.protocol=arduino
+RGBLedRingV3-A.upload.maximum_size=15872
+RGBLedRingV3-A.upload.speed=115200
+RGBLedRingV3-A.bootloader.low_fuses=0xFF
+RGBLedRingV3-A.bootloader.high_fuses=0xDD
+RGBLedRingV3-A.bootloader.extended_fuses=0x04
+RGBLedRingV3-A.bootloader.path=optiboot
+RGBLedRingV3-A.bootloader.file=optiboot_diecimila.hex
+RGBLedRingV3-A.bootloader.unlock_bits=0x3F
+RGBLedRingV3-A.bootloader.lock_bits=0x3F
+RGBLedRingV3-A.build.mcu=atmega168
+RGBLedRingV3-A.build.f_cpu=16000000L
+RGBLedRingV3-A.build.core=arduino
+RGBLedRingV3-A.build.variant=eightanaloginputs
+#
+#
+#
+##############################################################
+
+
+
+##############################################################
+#
+# to activate this board, select it and use:
+#
+# 'Burn Bootloader' just once
+# Make sure to select your programmer type in the menu!
+# this makes sure the correct FUSE settings are used
+#
+RGBLedRingV3-B.name=RGB LED RING V3 - ATmega168 / 16MHz Quartz / ISP
+RGBLedRingV3-B.upload.maximum_size=16384
+RGBLedRingV3-B.upload.speed=115200
+RGBLedRingV3-B.bootloader.low_fuses=0xFF
+RGBLedRingV3-B.bootloader.high_fuses=0xDD
+RGBLedRingV3-B.bootloader.extended_fuses=0x05
+RGBLedRingV3-B.bootloader.path=optiboot
+RGBLedRingV3-B.bootloader.file=optiboot_diecimila.hex
+RGBLedRingV3-B.bootloader.unlock_bits=0x3F
+RGBLedRingV3-B.bootloader.lock_bits=0x3F
+RGBLedRingV3-B.build.mcu=atmega168
+RGBLedRingV3-B.build.f_cpu=16000000L
+RGBLedRingV3-B.build.core=arduino
+RGBLedRingV3-B.build.variant=eightanaloginputs
+#
+#
+#
+##############################################################
