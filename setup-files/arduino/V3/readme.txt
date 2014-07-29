@@ -10,4 +10,6 @@ Now you will find the following new boards in the 'boards menu':
 
 + RGB LED RING V3 - ATmega168 / 16MHz Quartz / Optiboot [default]
 + RGB LED RING V3 - ATmega168 / 16MHz Quartz / ISP
++ RGB LED RING V3 - ATmega168 / 8MHz internal RC / ISP
+
 

@@ -59,3 +59,32 @@ RGBLedRingV3-B.build.variant=eightanaloginputs
 #
 #
 ##############################################################
+
+
+
+##############################################################
+#
+# to activate this board, select it and use:
+#
+# 'Burn Bootloader' just once
+# Make sure to select your programmer type in the menu!
+# this makes sure the correct FUSE settings are used
+#
+RGBLedRingV3-C.name=RGB LED RING V3 - ATmega168 / 8MHz internal RC / ISP
+RGBLedRingV3-C.upload.maximum_size=16384
+RGBLedRingV3-C.upload.speed=115200
+RGBLedRingV3-C.bootloader.low_fuses=0xE2
+RGBLedRingV3-C.bootloader.high_fuses=0xDD
+RGBLedRingV3-C.bootloader.extended_fuses=0x05
+RGBLedRingV3-C.bootloader.path=optiboot
+RGBLedRingV3-C.bootloader.file=optiboot_pro_8MHz.hex
+RGBLedRingV3-C.bootloader.unlock_bits=0x3F
+RGBLedRingV3-C.bootloader.lock_bits=0x3F
+RGBLedRingV3-C.build.mcu=atmega168
+RGBLedRingV3-C.build.f_cpu=8000000L
+RGBLedRingV3-C.build.core=arduino
+RGBLedRingV3-C.build.variant=eightanaloginputs
+#
+#
+#
+##############################################################
